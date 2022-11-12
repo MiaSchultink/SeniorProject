@@ -60,6 +60,9 @@ app.use((req, res, next) => {
     next();
 });
 
+const trilasRoutes = require('./routes/trials')
+app.use('/trials',trilasRoutes)
+
 app.get('/', (req, res, next) => {
     res.render('home');
 })
