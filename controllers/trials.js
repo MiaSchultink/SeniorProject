@@ -91,17 +91,13 @@ async function makeStudies() {
         const numStudies = jsonStudies.length;
 
         for (let i = 0; i < numStudies; i++) {
+            console.log(i)
             const isFDA = jsonStudies[i].IsFDARegulatedDevice[0] == "Yes" || jsonStudies[i].IsFDARegulatedDrug[0] == "Yes";
 
             const studyURL = 'https://clinicaltrials.gov/ct2/show/' + jsonStudies[i].NCTId[0];
 
-            if (jsonStudies[i].Condition[0] == CONDITION &&(
-                containsKeyWords(jsonStudies[i].Condition[0,KEYWORDS])||
-                containsKeyWords(jsonStudies[i].DetailedDescription[0,KEYWORDS])||
-                containsKeyWords(jsonStudies[i].BriefTitle[0,KEYWORDS])||
-                containsKeyWords(jsonStudies[i].Keyword[0,KEYWORDS])
-                )
-                ) {
+            if (jsonStudies[i].Condition[0] == CONDITION &&(jsonStudies[i].InterventionType[0] == "Genetic")) {
+                
                 const study = new Study({
                     rank: jsonStudies[i].Rank,
                     NCTId: jsonStudies[i].NCTId[0],
@@ -117,6 +113,10 @@ async function makeStudies() {
                     url: studyURL
                 })
                 console.log("Study Id", study.NCTId)
+                if(jsonStudies[i].InterventionType[0]!=null){
+                    console.log(jsonStudies[i].InterventionType[0]=="Genetic")
+                }
+        
                 await study.save();
 
                 retStudies.push(study)
