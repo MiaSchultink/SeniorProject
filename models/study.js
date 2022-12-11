@@ -16,6 +16,12 @@ const studySchema= new Schema({
     enrolment:{
         type:Number
     },
+    minAge:{
+        type:Number
+    },
+    maxAge:{
+        type:Number
+    },
     condition:{
         type:String
     },
@@ -43,13 +49,21 @@ const studySchema= new Schema({
     completionDate:{
         type:String
     },
-    outcomesDescription:{
-        type:String
+    primaryOutcomes:{
+        type:String,
     },
     pValue:{
         type:Number
     },
-
+    numSeriousEvents:{
+        type:Number
+    },
+    numAffectedBySeriousEvents:{
+        type:Number
+    },
+    precentGeneticTreatment:{
+        type:Number
+    },
     url:{
         type:String
     }

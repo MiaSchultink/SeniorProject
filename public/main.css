@@ -1,0 +1,29 @@
+:root {
+    --purple: #b630f0;
+    --black:  #000000;
+    --dark-grey: #1f1f1f;
+  }
+
+
+  body{
+    background-color: var(--black);
+    color:white;
+  }
+
+  .nav-bar{
+
+  }
+  .top{
+
+  }
+  .main{
+
+  }
+  .btn{
+    height: 40px;
+    width: 100px;
+    border-radius: 20px;
+    color: white;
+    background-color: var(--purple);
+    border:none;
+  }
