@@ -1,10 +1,11 @@
 const fetch = require('node-fetch')
 const Study = require('../models/study')
+const User = require('../models/user');
+const Search = require('../models/search')
 
 const fs = require('fs');
 
-let CONDITION = "Duchenne Muscular Dystrophy";
-const NUM_STUDIES_GENERATED = 1000;
+const NUM_STUDIES_GENERATED = 100;
 
 const generalFields = ["NCTId", "OfficialTitle", "LeadSponsorName", "DetailedDescription", "EnrollmentCount", "IsFDARegulatedDevice", "IsFDARegulatedDrug", "InterventionType", "BriefTitle", "Condition", "StudyType", "Phase", "OverallStatus", "KeyWord"];
 const timeFields = ["NCTId", "CompletionDate", "StartDate", "TargetDuration"];
@@ -13,9 +14,9 @@ const resultFields = ["NCTId", "SecondaryOutcomeDescription", "PrimaryOutcomeDes
 const statsFields = ["NCTId", "OutcomeAnalysisPValue", "SeriousEventStatsNumEvents", "SeriousEventStatsNumAffected"];
 
 
-function buildURL(fields) {
+function buildURL(fields, condition) {
 
-    const splitCondition = CONDITION.split(" ");
+    const splitCondition = condition.split(" ");
     const urlStart = "https://clinicaltrials.gov/api/query/study_fields?expr=";
     const urlEnd = "&min_rnk=1&max_rnk=" + NUM_STUDIES_GENERATED + "&fmt=JSON";
 
@@ -27,7 +28,7 @@ function buildURL(fields) {
         urlMiddle += splitCondition[splitCondition.length - 1];
     }
     else {
-        urlMiddle += CONDITION
+        urlMiddle += condition
     }
     urlMiddle += "&fields=";
 
@@ -43,8 +44,8 @@ function buildURL(fields) {
 }
 
 
-async function fetchJSON(fields) {
-    const url = buildURL(fields);
+async function fetchJSON(fields, condition) {
+    const url = buildURL(fields, condition);
     const response = await fetch(url);
     const json = await response.json();
     return json;
@@ -69,11 +70,11 @@ function getJSONFields() {
     return jsonFields
 }
 
-async function makeStudies() {
+async function makeStudies(condition) {
     try {
         await Study.deleteMany().exec();
         const retStudies = [];
-        const json = await fetchJSON(generalFields, CONDITION);
+        const json = await fetchJSON(generalFields, condition);
         const jsonStudies = json.StudyFieldsResponse.StudyFields;
 
         for (jsonStudy of jsonStudies) {
@@ -81,7 +82,7 @@ async function makeStudies() {
             const isFDA = jsonStudy.IsFDARegulatedDevice[0] == "Yes" || jsonStudy.IsFDARegulatedDrug[0] == "Yes";
             const studyURL = 'https://clinicaltrials.gov/ct2/show/' + jsonStudy.NCTId[0];
 
-            if (jsonStudy.Condition[0] == CONDITION && (jsonStudy.InterventionType[0] == "Genetic")) {
+            if (jsonStudy.Condition[0] == condition && (jsonStudy.InterventionType[0] == "Genetic")) {
 
                 const study = new Study({
                     rank: jsonStudy.Rank,
@@ -115,9 +116,9 @@ async function makeStudies() {
     }
 }
 
-async function addTimeFields() {
+async function addTimeFields(condition) {
     try {
-        const json = await fetchJSON(timeFields, CONDITION);
+        const json = await fetchJSON(timeFields, condition);
         const jsonStudies = json.StudyFieldsResponse.StudyFields;
 
         for (jsonStudy of jsonStudies) {
@@ -137,9 +138,9 @@ async function addTimeFields() {
         console.log(err)
     }
 }
-async function addStatsFields() {
+async function addStatsFields(condition) {
     try {
-        const json = await fetchJSON(statsFields, CONDITION);
+        const json = await fetchJSON(statsFields, condition);
         const jsonStudies = json.StudyFieldsResponse.StudyFields;
 
         for (jsonStudy of jsonStudies) {
@@ -168,9 +169,9 @@ async function addStatsFields() {
         console.log(err)
     }
 }
-async function addParticipantFields() {
+async function addParticipantFields(condition) {
     try {
-        const json = await fetchJSON(participantFields, CONDITION);
+        const json = await fetchJSON(participantFields, condition);
         const jsonStudies = json.StudyFieldsResponse.StudyFields;
 
         for (jsonStudy of jsonStudies) {
@@ -192,9 +193,9 @@ async function addParticipantFields() {
         console.log(err)
     }
 }
-async function addResultsFields() {
+async function addResultsFields(condition) {
     try {
-        const json = await fetchJSON(resultFields, CONDITION);
+        const json = await fetchJSON(resultFields, condition);
         const jsonStudies = json.StudyFieldsResponse.StudyFields;
 
         for (jsonStudy of jsonStudies) {
@@ -219,16 +220,48 @@ async function addResultsFields() {
 }
 
 exports.run = async (req, res, next) => {
+    const user = await User.findById(req.session.user._id).exec();
+    const searchName = req.body.name;
+    const condition = req.body.condition;
 
-    // await makeStudies();
-    // console.log("Studies made")
-    // await addTimeFields();
-    // console.log("time info added")
-    // await addStatsFields();
-    // console.log("Stats info added");
-    // await addParticipantFields();
-    // console.log("participant fields added")
-    await addResultsFields();
-    console.log("results added");
-    res.redirect('/');
+    console.log("condition", condition)
+    console.log("name", searchName)
+
+    try{
+        const newSearch = new Search({
+            condition: condition,
+            name: searchName
+        })
+
+        const studies = await makeStudies(condition);
+        console.log("Studies made")
+        console.log(newSearch)
+
+        console.log('condition2', newSearch.condition)
+        console.log('name2',newSearch.name)
+        console.log('studies', newSearch.studies)
+        
+        await Promise.all(addTimeFields(condition), addStatsFields(condition), addParticipantFields(condition), addResultsFields(condition))
+
+        newSearch.studies.push(studies)
+        console.log(newSearch)
+        await newSearch.save();
+        user.saved.push(newSearch);
+        await user.save();
+        res.redirect('/');
+    }
+    catch (err) {
+        console.log(err)
+    }
+    
+}
+
+
+exports.getNewSearch = (req, res, next) =>{
+    try{
+        res.render('new-search');
+    }
+    catch (err) {
+        console.log(err)
+    }
 }

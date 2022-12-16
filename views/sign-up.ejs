@@ -1,0 +1,27 @@
+<%- include('includes/top.ejs') %> 
+<body>
+    <%- include('includes/nav.ejs') %>
+    <div class="top">
+        <div class="main">
+            <div class="auth-form-container">
+         <form class="form" action = "/user/sign-up" method="post">
+        <div class="form-section">
+            <label for="name">Name</label>
+            <input class="input-txt" name="name">
+        </div>
+        <div class="form-section">
+            <label for="email">Email</label>
+            <input class="input-txt" name ="email" type="email">
+        </div>
+        <div class="form-section">
+            <label for="password">Password</label>
+            <input class="input-txt" name="password" type="password">
+        </div>
+            <button type = "submit" class="btn">Sign-up</button>
+            <input type ="hidden" name ="_csrf" value= '<%=csrfToken%>'>
+         </form>
+        </div>
+        </div>
+        
+    </div>
+</body>

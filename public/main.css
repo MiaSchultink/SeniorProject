@@ -2,22 +2,53 @@
     --purple: #b630f0;
     --black:  #000000;
     --dark-grey: #1f1f1f;
+    --dark-purple: #591775;
+    --very-dark-purple: #3c0f4f;
   }
 
 
   body{
     background-color: var(--black);
     color:white;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    padding: 0;
+    margin: 0;
   }
 
-  .nav-bar{
-
-  }
   .top{
+    padding: 20px;
 
   }
   .main{
 
+  }
+  .nav-container{
+    width: 100vw;
+    background-color: var(--dark-purple);
+    height: 60px;
+    font-size: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .nav-bar{
+
+  }
+  .nav-btn{
+    background: none;
+    color: inherit;
+    border: none;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
+    outline: inherit;
+
+    height: 100%;
+    width: 100%;
+    background-color: var(--dark-purple);
+  }
+  .nav-btn:hover{
+    background-color: var(--very-dark-purple);
   }
   .btn{
     height: 40px;
@@ -26,4 +57,39 @@
     color: white;
     background-color: var(--purple);
     border:none;
+  }
+  .btn:hover{
+    background-color: var(--dark-purple);
+  }
+
+  .auth-form-container{
+    display: block;
+    width: 25%;
+  }
+
+  .input-txt{
+    padding: 5px;
+        width: 100%;
+        border-radius: 12px;
+        background-color: var(--dark-grey);
+        color: white;
+        border: none;
+        outline: none;
+        -webkit-appearance: none;
+        height: 30px;
+  }
+
+  .forgot-btn{
+    height: 40px;
+    width: 100px;
+    border-radius: 20px;
+    color: white;
+    background-color: transparent;
+    border: 1px solid var(--purple);
+    margin-top: 10px;
+  }
+
+  .logout-form{
+    width: 100%;
+    height: 100%;
   }

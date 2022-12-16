@@ -244,7 +244,9 @@ exports.editProfile = async(req, res, next) =>{
 exports.getSavedSearches = async(req, res, next) =>{
     try{
         const user = await User.findById(req.session.user._id).populate('saved').exec();
-        const saved = user.saved;
+        res.render("saved-searches",{
+            user: user
+        })
     }
     catch (err) {
         console.log(err)

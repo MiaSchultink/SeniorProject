@@ -2,10 +2,14 @@
  <div id='nav-bar' class="nav-container">
 
     <% if(locals.isLoggedIn){%>
- <div class="nav-section">
-     <button class="nav-btn" onclick="location.assign('/user/saved/<%=user._id%>')">Saved Searches</button>
-     <button class="nav-btn" onclick="location.assign('/trials/new-search')">Saved Searches</button>
-  </div>
+      <button class="nav-btn" onclick="location.assign('/trials/new')">New Search</button>
+     <button class="nav-btn" onclick="location.assign('/user/saved')">Saved Searches</button>
+     <button class="nav-btn" onclick="location.assign('/user/profile')">Profile</button>
+     <form class="logout-form" method="POST" action="/user/logout">
+         <button class="nav-btn" type="submit">Logout</button>
+         <input type ="hidden" name ="_csrf" value= '<%=csrfToken%>'>
+     </form>
+    
     <%}%>
     <% if(!locals.isLoggedIn){%>
             <button class="nav-btn" onclick="location.assign('/user/login')">Login</button>
@@ -13,6 +17,9 @@
     <% if(!locals.user){%>
      <button class="nav-btn" onclick="location.assign('/user/sign-up')">Sign-up</button>
     <%}%>
+    <% if(locals.isAdmin){ %>
+      <button class="nav-btn" onclick="location.assign('/admin/control-panel')">Admin Control Panel</button>
+   <% } %> 
  
 </div>
 </div>

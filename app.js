@@ -62,9 +62,11 @@ app.use((req, res, next) => {
 
 const trilasRoutes = require('./routes/trials')
 const userRoutes = require('./routes/user')
+const adminRoutes = require('./routes/admin')
 
 app.use('/trials',trilasRoutes)
 app.use('/user', userRoutes)
+app.use('/admin', adminRoutes)
 
 app.get('/', (req, res, next) => {
     res.render('home');

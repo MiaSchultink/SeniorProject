@@ -1,0 +1,16 @@
+<%- include('includes/top.ejs') %> 
+<body>
+    <%- include('includes/nav.ejs') %>
+    <div class="top">
+        <div class="main">
+            <form class="search-form" method="post" action="/trials/new">
+                <label for="name">Search Name</label>
+                <input type="text" class="input-txt" id="name" name="name">
+                <label for="condition">Condition</label>
+                <input type="text" class="input-txt" id="condition" name="condition" required>
+                <button class="btn" type="submit">Find Studies</button>
+                <input type ="hidden" name ="_csrf" value= '<%=csrfToken%>'>
+            </form>
+        </div>
+    </div>
+</body>

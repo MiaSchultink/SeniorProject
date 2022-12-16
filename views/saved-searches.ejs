@@ -1,0 +1,15 @@
+<%- include('includes/top.ejs') %>
+<body>
+    <%- include('includes/nav.ejs') %>
+    <div class="top">
+    <div class="main">
+        <div class="search-container">
+            <% for (let i=0; i<user.saved.length; i++){ %>
+                <div class="search"><%=user.saved[i].searchName%></div>
+            <% } %>
+        </div>
+    </div>
+    </div>
+   
+</div>
+</body>
