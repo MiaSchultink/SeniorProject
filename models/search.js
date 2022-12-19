@@ -16,6 +16,9 @@ const searchSchema = new Schema({
     },
     precentGenetic:{
         type:Number
+    },
+    date:{
+        type:Date
     }
 
 })

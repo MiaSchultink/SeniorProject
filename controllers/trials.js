@@ -169,6 +169,20 @@ async function addStatsFields(condition) {
         console.log(err)
     }
 }
+
+function checkAndConvertAge(stringAge){
+    const splitAge = stringAge.split(" ");
+    let numAge = parseInt(splitAge[0]);
+    if(splitAge[1]=="Months"){
+        numAge = numAge/12;
+    }
+    else if(splitAge[1] == "Days"){
+        numAge = numAge/365;
+    }
+
+    return numAge;
+}
+
 async function addParticipantFields(condition) {
     try {
         const json = await fetchJSON(participantFields, condition);
@@ -178,11 +192,14 @@ async function addParticipantFields(condition) {
             const dbStudy = await Study.findOne({ NCTId: jsonStudy.NCTId[0] }).exec();
             if (dbStudy != null) {
                 console.log("Study Id", dbStudy.NCTId)
-                if (jsonStudy.MinimumAge[0] !=null && !isNaN(parseInt(jsonStudy.MinimumAge[0]))) {
-                    dbStudy.minAge = parseInt(jsonStudy.MinimumAge[0])
+
+                if (jsonStudy.MinimumAge[0] != null && !isNaN(parseInt(jsonStudy.MinimumAge[0]))) {
+                    const numMinAge = checkAndConvertAge(jsonStudy.MinimumAge[0]);
+                    dbStudy.minAge = numMinAge;
                 }
                 if (jsonStudy.MaximumAge[0] != null && !isNaN(parseInt(jsonStudy.MaximumAge[0]))) {
-                    dbStudy.maxAge = parseInt(jsonStudy.MaximumAge[0])
+                    const numMaxAge = checkAndConvertAge(jsonStudy.MaximumAge[0]);
+                    dbStudy.maxAge = numMaxAge;
                 }
                 await dbStudy.save();
             }
@@ -200,17 +217,17 @@ async function addResultsFields(condition) {
 
         for (jsonStudy of jsonStudies) {
             if (jsonStudy != null) {
-      
+
                 const dbStudy = await Study.findOne({ NCTId: jsonStudy.NCTId[0] }).exec();
-        
-                if(dbStudy!=null){
+
+                if (dbStudy != null) {
                     console.log("Study Id", dbStudy.NCTId)
                     if (jsonStudy.PrimaryOutcomeDescription[0] != null) {
                         dbStudy.primaryOutcomes = jsonStudy.PrimaryOutcomeDescription[0];
                     }
                     await dbStudy.save();
                 }
-               
+
             }
         }
     }
@@ -219,49 +236,52 @@ async function addResultsFields(condition) {
     }
 }
 
-exports.run = async (req, res, next) => {
+exports.startNewSearch = async (req, res, next) => {
     const user = await User.findById(req.session.user._id).exec();
     const searchName = req.body.name;
     const condition = req.body.condition;
+    const date = new Date();
 
-    console.log("condition", condition)
-    console.log("name", searchName)
-
-    try{
+    try {
         const newSearch = new Search({
             condition: condition,
-            name: searchName
+            name: searchName,
+            date:date
         })
 
         const studies = await makeStudies(condition);
         console.log("Studies made")
-        console.log(newSearch)
+        newSearch.studies = studies;
 
-        console.log('condition2', newSearch.condition)
-        console.log('name2',newSearch.name)
-        console.log('studies', newSearch.studies)
-        
-        await Promise.all(addTimeFields(condition), addStatsFields(condition), addParticipantFields(condition), addResultsFields(condition))
+        await addTimeFields(condition);
+        console.log("time fields added")
+        await addStatsFields(condition);
+        console.log("stats fields added")
+        await addParticipantFields(condition);
+        console.log("participant fields added")
+        await addResultsFields(condition);
+        console.log("result fields added")
 
-        newSearch.studies.push(studies)
-        console.log(newSearch)
         await newSearch.save();
         user.saved.push(newSearch);
         await user.save();
-        res.redirect('/');
+
+        res.redirect('/user/saved');
     }
     catch (err) {
         console.log(err)
     }
-    
+
 }
 
 
-exports.getNewSearch = (req, res, next) =>{
-    try{
+exports.getNewSearch = (req, res, next) => {
+    try {
         res.render('new-search');
     }
     catch (err) {
         console.log(err)
     }
 }
+
+

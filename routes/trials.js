@@ -5,6 +5,6 @@ const router = express.Router();
 const trialsController = require('../controllers/trials')
 
 router.get('/new', trialsController.getNewSearch)
-router.post('/new', trialsController.run);
+router.post('/new', trialsController.startNewSearch);
 
 module.exports = router;

@@ -2,8 +2,10 @@
     --purple: #b630f0;
     --black:  #000000;
     --dark-grey: #1f1f1f;
+    --very-dark-grey: #0d0d0d;
     --dark-purple: #591775;
     --very-dark-purple: #3c0f4f;
+    --light-grey:#7d7d7d;
   }
 
 
@@ -93,3 +95,32 @@
     width: 100%;
     height: 100%;
   }
+
+  .single-search-el{
+    margin-bottom: 10px;
+    font-size: 15px;
+  }
+  .single-search-title{
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+
+  .single-study-container{
+    padding: 20px;
+    background-color: var(--very-dark-grey);
+    border-radius: 10px;
+  }
+  .single-field{
+    margin-bottom: 5px;
+    color: var(--light-grey);
+  }
+  
+  .single-search-container{
+    margin-bottom: 20px;
+  }
+  .single-field-content-container{
+    display: flex;
+  }
+
+  

@@ -1,0 +1,33 @@
+<%- include('includes/top.ejs') %>
+<body>
+    <%- include('includes/nav.ejs') %>
+    <div class="top">
+    <div class="main">
+        <div class="single-search-container">
+            <div class="single-search-title"><%=search.name%></div>
+            <div class="single-search-el"><%=search.date.toString()%></div>
+            <div class="single-search-el"><%=search.condition%></div>
+            <div class="single-search-container">
+                <label for="single-search">Search</label>
+                <input type="search" class="input-txt" name="single-search">
+            </div>
+            <div class="single-studies">
+                <% for (let i=0; i<search.studies.length; i++) {%>
+                    <div class="single-study-container">
+                        <%for(let j=0; j<Object.keys(search.studies[i].toJSON()).length; j++){%>
+                        <div class="single-field-content-container">
+                            <div class="single-field"><%=(Object.keys(search.studies[i].toJSON()))[j]%>:</div>
+                            <div> </div>
+                            <div class="single-contnet"><%=search.studies[i][(Object.keys(search.studies[i].toJSON()))[j]]%></div>
+                        </div>
+                        <%}%>
+                    </div>
+                <%}%>
+            </div>
+            
+        </div>
+    </div>
+    </div>
+   
+</div>
+</body>

@@ -2,6 +2,7 @@ const User = require('../models/user');
 const crypto = require('crypto')
 const bcrypt = require('bcryptjs');
 const sgMail = require('@sendgrid/mail'); 
+const Search = require('../models/search')
 
 sgMail.setApiKey(process.env.API_KEY)
 
@@ -254,3 +255,21 @@ exports.getSavedSearches = async(req, res, next) =>{
     }
 
 }
+
+
+exports.getSingleSearch = async (req, res, next) =>{
+    try{
+        const search = await Search.findById(req.params.searchId).populate('studies').exec();
+        console.log("keys",Object.keys(search.studies[0].toJSON()))
+        const excludeFields = ["__v", "_id"];
+
+        console.log("search",search)
+        res.render('view-search',{
+            search: search,
+            excludeFields: excludeFields
+        })
+    }
+    catch (err) {
+        console.log(err)
+    }
+} 
