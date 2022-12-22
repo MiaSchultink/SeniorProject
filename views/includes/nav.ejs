@@ -2,8 +2,8 @@
  <div id='nav-bar' class="nav-container">
 
     <% if(locals.isLoggedIn){%>
-      <button class="nav-btn" onclick="location.assign('/trials/new')">New Search</button>
-     <button class="nav-btn" onclick="location.assign('/user/saved')">Saved Searches</button>
+      <button class="nav-btn" onclick="location.assign('/search/new')">New Search</button>
+     <button class="nav-btn" onclick="location.assign('/search/saved')">Saved Searches</button>
      <button class="nav-btn" onclick="location.assign('/user/profile')">Profile</button>
      <form class="logout-form" method="POST" action="/user/logout">
          <button class="nav-btn" type="submit">Logout</button>

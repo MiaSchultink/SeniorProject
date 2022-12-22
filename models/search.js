@@ -5,20 +5,24 @@ const searchSchema = new Schema({
     condition:{
         type:String
     },
+    name:{
+        type:String,
+        unique: true
+    },
     studies: [
         {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Study'
         }
     ],
-    name:{
-        type:String
-    },
     precentGenetic:{
         type:Number
     },
     date:{
         type:Date
+    },
+    stringDate:{
+        type:String
     }
 
 })

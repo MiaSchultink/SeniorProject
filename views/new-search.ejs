@@ -3,11 +3,58 @@
     <%- include('includes/nav.ejs') %>
     <div class="top">
         <div class="main">
-            <form class="search-form" method="post" action="/trials/new">
+            <script>
+                function showSelected(){
+                    const container = document.getElementById("sel-cont");
+                    container.style.display = "block";
+                    const clickDiv = document.getElementById("sel-div");
+                    clickDiv.innerHTML = "Hide Selected"
+                    clickDiv.onclick = hideSelected();
+                }
+                function hideSelected(){
+                    const container = document.getElementById("sel-cont");
+                    container.style.display = "none"
+                    const clickDiv = document.getElementById("sel-div");
+                    clickDiv.innerHTML = "Show Selected"
+                    clickDiv.onclick = showSelected();
+                }
+                function showUnselected(){
+                    const container = document.getElementById("unsel-container");
+                    container.style.display = "block"
+                    const clickDiv = document.getElementById("unsel-div");
+                    clickDiv.innerHTML = "Hide Unselected";
+                    clickDiv.onclick = hideUnselected();
+                }
+                function hideUnselected(){
+                    const container = document.getElementById("unsel-container");
+                    container.style.display = "none"
+                    const clickDiv = document.getElementById("unsel-div");
+                    clickDiv.innerHTML = "Show Unselected"
+                    clickDiv.onclick = showUnselected();
+                }
+            </script>
+            <form class="search-form" method="post" action="/search/new">
                 <label for="name">Search Name</label>
                 <input type="text" class="input-txt" id="name" name="name">
                 <label for="condition">Condition</label>
                 <input type="text" class="input-txt" id="condition" name="condition" required>
+                <div class="sel-stat" onclick="showSelected()" id="sel-div">Show Selected</div>
+                <div class="sel-cont" id="sel-cont">
+                    <%for(let i=0; i<selected.length; i++){%>
+                        <div class="field-cont" id="sel-cont">
+                            <div calss="field-text"><%=selected[i]%></div>
+                        </div>
+                    <%}%>
+                </div>
+                <div class="unsel-stat" onclick="showUnselected()" id="unsel-div">Show Unselected</div>
+                <div class="unsel-cont" id="unsel-cont">
+                    <%for(let i=0; i<unselected.length; i++){%>
+                        <div class="field-cont">
+                            <input type="checkbox" name="<%=unselected[i]%>" value="<%=unselected[i]%>">
+                            <label for="<%=unselected[i]%>"><%=unselected[i]%></label>     
+                        </div>
+                    <%}%>
+                </div>
                 <button class="btn" type="submit">Find Studies</button>
                 <input type ="hidden" name ="_csrf" value= '<%=csrfToken%>'>
             </form>

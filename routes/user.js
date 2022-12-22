@@ -11,7 +11,4 @@ router.get('/sign-up', userController.getSignUp);
 router.post('/sign-up', userController.postSignUp);
 router.post('/logout', isAuth, userController.logout)
 
-router.get('/saved', isAuth,  userController.getSavedSearches);
-router.get('/saved/:searchId', isAuth, userController.getSingleSearch);
-
 module.exports = router;

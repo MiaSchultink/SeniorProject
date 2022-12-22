@@ -60,11 +60,11 @@ app.use((req, res, next) => {
     next();
 });
 
-const trilasRoutes = require('./routes/trials')
+const searchRoutes = require('./routes/search')
 const userRoutes = require('./routes/user')
 const adminRoutes = require('./routes/admin')
 
-app.use('/trials',trilasRoutes)
+app.use('/search',searchRoutes)
 app.use('/user', userRoutes)
 app.use('/admin', adminRoutes)
 

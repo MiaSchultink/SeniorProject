@@ -6,6 +6,8 @@ const Search = require('../models/search')
 
 sgMail.setApiKey(process.env.API_KEY)
 
+
+
 exports.getLogIn = (req, res, next) => {
     try{
         res.render('login')
@@ -242,34 +244,3 @@ exports.editProfile = async(req, res, next) =>{
 }
 
 
-exports.getSavedSearches = async(req, res, next) =>{
-    try{
-        const user = await User.findById(req.session.user._id).populate('saved').exec();
-        res.render("saved-searches",{
-            user: user
-        })
-    }
-    catch (err) {
-        console.log(err)
-        res.render('error')
-    }
-
-}
-
-
-exports.getSingleSearch = async (req, res, next) =>{
-    try{
-        const search = await Search.findById(req.params.searchId).populate('studies').exec();
-        console.log("keys",Object.keys(search.studies[0].toJSON()))
-        const excludeFields = ["__v", "_id"];
-
-        console.log("search",search)
-        res.render('view-search',{
-            search: search,
-            excludeFields: excludeFields
-        })
-    }
-    catch (err) {
-        console.log(err)
-    }
-} 
