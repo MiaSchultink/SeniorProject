@@ -7,10 +7,15 @@
             <% for (let i=0; i<user.saved.length; i++){ %>
                 <div class="saved-search-container" onclick="location.assign('/search/saved/<%=user.saved[i]._id%>')">
                 <div class="saved-search-info">
-                    <div class="search-el"><%=user.saved[i].name%></div>
-                    <div class="search-el"><%=user.saved[i].stringDate%></div>
+                    <div class="search-name"><%=user.saved[i].name%></div>
+                    <div class="search-date"><%=user.saved[i].stringDate%></div>
                 </div>
                     <div class="search-mod-btns">
+                    <form action="/search/saved/update" method="post">
+                        <input type="hidden" name="searchId" value="<%=user.saved[i]._id%>">
+                        <button class="search-mod-btn"  type="submit">Get Latest Studies</button>
+                        <input type ="hidden" name ="_csrf" value= '<%=csrfToken%>'>
+                    </form>
                         <form action="/search/saved/delete/<%=user.saved[i]._id%>" method="post">
                             <button class="search-mod-btn" type="submit"><i class="fas fa-trash"></i></button>
                             <input type ="hidden" name ="_csrf" value= '<%=csrfToken%>'>
@@ -18,17 +23,12 @@
                         </form>
                     <button class="search-mod-btn" onclick="location.assign('/saved/search/edit/<%=user.saved[i]._id%>')"><i class="fas fa-edit"></i></button>
                     <form action="/search/saved/json" method="post">
-                        <button class="searh-mod-btn" type="submit">JSON</button>
+                        <button class="search-mod-btn" type="submit">JSON</button>
                         <input type ="hidden" name ="_csrf" value= '<%=csrfToken%>'>
                         <input type="hidden" name="searchId" value="<%=user.saved[i]._id%>">
                     </form>
                     <form action="/search/saved/csv" method="post">
-                        <button class="searh-mod-btn" type="submit">CSV</button>
-                        <input type ="hidden" name ="_csrf" value= '<%=csrfToken%>'>
-                        <input type="hidden" name="searchId" value="<%=user.saved[i]._id%>">
-                    </form>
-                    <form action="/search/saved/pdf" method="post">
-                        <button class="searh-mod-btn" type="submit">PDF</button>
+                        <button class="search-mod-btn" type="submit">CSV</button>
                         <input type ="hidden" name ="_csrf" value= '<%=csrfToken%>'>
                         <input type="hidden" name="searchId" value="<%=user.saved[i]._id%>">
                     </form>

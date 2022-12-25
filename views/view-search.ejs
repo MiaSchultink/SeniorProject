@@ -15,11 +15,13 @@
                 <% for (let i=0; i<search.studies.length; i++) {%>
                     <div class="single-study-container">
                         <%for(let j=0; j<Object.keys(search.studies[i].toJSON()).length; j++){%>
+                        <% if(!excludeFields.includes((Object.keys(search.studies[i].toJSON()))[j])){%>
                         <div class="single-field-content-container">
                             <div class="single-field"><%=(Object.keys(search.studies[i].toJSON()))[j]%>:</div>
-                            <div> </div>
+                            <div></div>
                             <div class="single-contnet"><%=search.studies[i][(Object.keys(search.studies[i].toJSON()))[j]]%></div>
                         </div>
+                          <%}%>
                         <%}%>
                     </div>
                 <%}%>

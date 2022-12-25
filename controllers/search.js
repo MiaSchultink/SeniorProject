@@ -4,20 +4,29 @@ const User = require('../models/user');
 const Search = require('../models/search')
 
 const fs = require('fs');
-const jsPDF = require('jspdf')
+const json2csv = require('json2csv').parse;
+
+
 
 const NUM_STUDIES_GENERATED = 100;
 
-const generalFields = ["NCTId", "OfficialTitle", "LeadSponsorName", "DetailedDescription", "EnrollmentCount", "IsFDARegulatedDevice", "IsFDARegulatedDrug", "InterventionType", "BriefTitle", "Condition", "StudyType", "Phase", "OverallStatus", "KeyWord"];
+const createFields = ["NCTId", "InterventionType", "Condition"]
+const generalFields = ["NCTId", "OfficialTitle", "LeadSponsorName", "DetailedDescription", "EnrollmentCount", "IsFDARegulatedDevice", "IsFDARegulatedDrug", "BriefTitle", "StudyType", "Phase", "OverallStatus"];
 const timeFields = ["NCTId", "CompletionDate", "StartDate", "TargetDuration"];
 const participantFields = ["NCTId", "MaximumAge", "MinimumAge"];
-const resultFields = ["NCTId", "SecondaryOutcomeDescription", "PrimaryOutcomeDescription"]
+const resultFields = ["NCTId", "SecondaryOutcomeDescription", "PrimaryOutcomeDescription","ResultsFirstPostDate"]
 const statsFields = ["NCTId", "OutcomeAnalysisPValue", "SeriousEventStatsNumEvents", "SeriousEventStatsNumAffected"];
 
+const excludeFields = ["NCTId", "MinumumAge", "MaximumAge", "IsFDARegulatedDevice", "IsFDARegulatedDrug","Keyword"];
 
 function combineFields() {
 
     const allFields = [];
+    for(field of createFields){
+        if(!allFields.includes(field)){
+            allFields.push(field)
+        }
+    }
     for (field of generalFields) {
         if (!allFields.includes(field)) {
             allFields.push(field)
@@ -62,11 +71,14 @@ function generateUnselectedFields() {
 function groupBy20(allSelected) {
     const groups = [];
 
-    for (let i = 0; i < allSelected.length; i += 20) {
-        const group = [];
-        for (let j = i; j < i + 20; j++) {
+    for (let i = 0; i < allSelected.length; i += 19) {
+        const group = ["NCTId"];
+        let j=i;
+        while(j<i+19 && j<allSelected.length){
             group.push(allSelected[j])
+            j++;
         }
+        console.log(group)
         groups.push(group)
     }
     return groups
@@ -147,32 +159,19 @@ function getJSONFieldsFromXMl() {
 
 async function makeStudies(condition) {
     try {
-        await Study.deleteMany().exec();
         const retStudies = [];
-        const json = await fetchJSON(generalFields, condition);
+        const json = await fetchJSON(createFields, condition);
         const jsonStudies = json.StudyFieldsResponse.StudyFields;
 
         for (jsonStudy of jsonStudies) {
 
-            const isFDA = jsonStudy.IsFDARegulatedDevice[0] == "Yes" || jsonStudy.IsFDARegulatedDrug[0] == "Yes";
-            const studyURL = 'https://clinicaltrials.gov/ct2/show/' + jsonStudy.NCTId[0];
-
             if (jsonStudy.Condition[0] == condition && (jsonStudy.InterventionType[0] == "Genetic")) {
-                let study = await Study.findOne({ NCTId: jsonStudy.NCTId[0] }).exec();
+                 let study = await Study.findOne({ NCTId: jsonStudy.NCTId[0] }).exec();
                 if (study == null) {
                     study = new Study({
-                        rank: jsonStudy.Rank,
                         NCTId: jsonStudy.NCTId[0],
-                        type: jsonStudy.StudyType[0],
-                        condition: jsonStudy.Condition[0],
-                        briefTitle: jsonStudy.BriefTitle[0],
-                        enrollment: jsonStudy.EnrollmentCount[0],
-                        isFDAreg: isFDA,
-                        status: jsonStudy.OverallStatus[0],
-                        phase: jsonStudy.Phase[0],
-                        leadSponsor: jsonStudy.LeadSponsorName[0],
-                        interventionType: jsonStudy.InterventionType[0],
-                        url: studyURL
+                        Condition: jsonStudy.Condition[0],
+                        InterventionType: jsonStudy.InterventionType[0]
                     })
                 }
                 await study.save();
@@ -187,6 +186,37 @@ async function makeStudies(condition) {
     }
 }
 
+async function addGeneralFields(condition){
+    try{
+        const json = await fetchJSON(generalFields, condition);
+        const jsonStudies = json.StudyFieldsResponse.StudyFields;
+        for (jsonStudy of jsonStudies) {
+
+            const isFDA = jsonStudy.IsFDARegulatedDevice[0] == "Yes" || jsonStudy.IsFDARegulatedDrug[0] == "Yes";
+            const studyURL = 'https://clinicaltrials.gov/ct2/show/' + jsonStudy.NCTId[0];
+
+            const dbStudy = await Study.findOne({NCTId: jsonStudy.NCTId[0]}).exec();
+            if(dbStudy!=null){
+                for(let i=0; i<generalFields.length; i++){
+                    if(!excludeFields.includes(generalFields[i])){
+                        console.log(generalFields[i])
+                        if(jsonStudy[generalFields[i]][0]!=null){
+                            dbStudy[generalFields[i]] = jsonStudy[generalFields[i]][0];
+                        }
+                        
+                    }
+                }
+                dbStudy.isFDAReg = isFDA;
+                dbStudy.url= studyURL;
+
+                await dbStudy.save();
+            }
+        }
+    }
+    catch (err) {
+        console.log(err)
+    }
+}
 
 async function addTimeFields(condition) {
     try {
@@ -198,9 +228,14 @@ async function addTimeFields(condition) {
             const dbStudy = await Study.findOne({ NCTId: jsonStudy.NCTId[0] }).exec();
             if (dbStudy != null) {
                 console.log("Study Id", dbStudy.NCTId)
-                dbStudy.startDate = jsonStudy.StartDate[0];
-                dbStudy.completionDate = jsonStudy.CompletionDate[0];
-
+                dbStudy.StartDate = jsonStudy.StartDate[0];
+                dbStudy.CompletionDate = jsonStudy.CompletionDate[0];
+                const miliStartDObjcet = new Date(dbStudy.StartDate);
+                const miliStartD = miliStartDObjcet.getTime();
+                const miliCompDObject  = new Date(dbStudy.CompletionDate);
+                const miliCompD = miliCompDObject.getTime();
+                dbStudy.miliStartD = miliStartD;
+                dbStudy.miliCompD = miliCompD;
                 await dbStudy.save();
             }
 
@@ -222,15 +257,15 @@ async function addStatsFields(condition) {
                 console.log("Study Id", dbStudy.NCTId);
                 console.log('p value', jsonStudy.OutcomeAnalysisPValue[0])
                 if (jsonStudy.OutcomeAnalysisPValue[0] != null) {
-                    dbStudy.pValue = parseInt(sonStudy.OutcomeAnalysisPValue[0]);
+                    dbStudy.PValue = parseInt(sonStudy.OutcomeAnalysisPValue[0]);
                 }
                 console.log("serious events", jsonStudy.SeriousEventStatsNumEvents[0])
                 if (jsonStudy.SeriousEventStatsNumEvents[0] != null) {
-                    dbStudy.numSeriousEvents = parseInt(jsonStudy.SeriousEventStatsNumEvents[0]);
+                    dbStudy.NumSeriousEvents = parseInt(jsonStudy.SeriousEventStatsNumEvents[0]);
                 }
                 console.log("num affected", jsonStudy.SeriousEventStatsNumAffected[0])
                 if (jsonStudy.SeriousEventStatsNumAffected[0] != null) {
-                    dbStudy.numAffectedBySeriousEvents = parseInt(jsonStudy.SeriousEventStatsNumAffected[0]);
+                    dbStudy.NumAffectedBySeriousEvents = parseInt(jsonStudy.SeriousEventStatsNumAffected[0]);
                 }
                 await dbStudy.save();
             }
@@ -295,12 +330,42 @@ async function addResultsFields(condition) {
                 if (dbStudy != null) {
                     console.log("Study Id", dbStudy.NCTId)
                     if (jsonStudy.PrimaryOutcomeDescription[0] != null) {
-                        dbStudy.primaryOutcomes = jsonStudy.PrimaryOutcomeDescription[0];
+                        dbStudy.PrimaryOutcomeDescription = jsonStudy.PrimaryOutcomeDescription[0];
+                    }
+                    if(jsonStudy.ResultsFirstPostDate.length>0){
+                        dbStudy.hasResults = true;
                     }
                     await dbStudy.save();
                 }
 
             }
+        }
+    }
+    catch (err) {
+        console.log(err)
+    }
+}
+
+async function addAdditionalSelectedFields(condition, additionalFields){
+    try{
+        const groupedFields = groupBy20(additionalFields);
+
+        for(let i=0; i<groupedFields.length; i++){
+            const currentFields = groupedFields[i];
+            const json = await fetchJSON(currentFields, condition);
+            const jsonStudies = json.StudyFieldsResponse.StudyFields;
+            for(jsonStudy of jsonStudies){
+                const dbStudy = await Study.findOne({NCTId: jsonStudy.NCTId[0]}).exec();
+                if(dbStudy!=null){
+                    for(let j=0; j<currentFields.length; j++){
+                        console.log(jsonStudy[currentFields[j]][0]);
+                        console.log(currentFields[j])
+                        dbStudy[currentFields[j]] = jsonStudy[currentFields[j]][0];
+                    }
+                    await dbStudy.save();
+                }
+            }
+           
         }
     }
     catch (err) {
@@ -314,7 +379,7 @@ exports.startNewSearch = async (req, res, next) => {
     const condition = req.body.condition;
     const date = new Date();
     const stringDate = getDayMonthYear(date);
-
+    console.log(req.body)
     try {
         const newSearch = new Search({
             condition: condition,
@@ -326,7 +391,8 @@ exports.startNewSearch = async (req, res, next) => {
         const studies = await makeStudies(condition);
         console.log("Studies made")
         newSearch.studies = studies;
-
+        await addGeneralFields(condition);
+        console.log("general fields added")
         await addTimeFields(condition);
         console.log("time fields added")
         await addStatsFields(condition);
@@ -335,6 +401,15 @@ exports.startNewSearch = async (req, res, next) => {
         console.log("participant fields added")
         await addResultsFields(condition);
         console.log("result fields added")
+        const additionalFields =[];
+        const keys = Object.keys(req.body);
+        for(let k=0; k<keys.length; k++){
+            if(keys[k]!="name"&&keys[k]!="condition"&&keys[k]!="_csrf"){
+                additionalFields.push(keys[k]);
+            }
+        }
+        await addAdditionalSelectedFields(condition, additionalFields);
+        console.log("addional fields added")
 
         await newSearch.save();
         user.saved.push(newSearch);
@@ -352,6 +427,7 @@ exports.getNewSearch = (req, res, next) => {
     try {
         const unselected = generateUnselectedFields();
         const selected = combineFields();
+    
         res.render('new-search', {
             unselected: unselected,
             selected: selected
@@ -404,8 +480,7 @@ exports.getSavedSearches = async (req, res, next) => {
 
 exports.getSingleSearch = async (req, res, next) => {
     try {
-        const search = await Search.findById(req.params.searchId).populate('studies').exec();
-        console.log("keys", Object.keys(search.studies[0].toJSON()))
+        const search = await Search.findById(req.params.searchId).populate("studies").exec();
         const excludeFields = ["__v", "_id"];
 
         console.log("search", search)
@@ -431,59 +506,54 @@ exports.filterStudies = async (req, res, next) => {
 }
 
 exports.searchToJson = async (req, res, next) => {
-    const search = await Search.findById(req.body.searchId).exec();
-    const stringSearch = JSON.stringify(search)
-    const fileName = search.name + ".json"
+    try{
+    const search = await Search.findById(req.body.searchId).populate("studies").exec();
+    const stringSearch = JSON.stringify(search);
+    console.log(stringSearch)
+    const fileName = search.name + ".json";
 
-    const file = fs.writeFileSync(fileName, stringSearch, (err) => {
-        if (err) {
-            console.error(err);
-        }
-    });
-    res.download(fileName);
-    fs.unlinkSync(fileName);
+    res.setHeader('Content-disposition', `attachment; filename= "${fileName}"`);
+    res.setHeader('Content-type', 'application/json');
+    res.write(stringSearch);
+    res.end();
+    }
+    catch (err) {
+        console.log(err)
+    }
+    
 }
 
-function toCSV(record) {
+function jsToCSV(record) {
     // Get the keys of the record (i.e. the field names)
-    const keys = Object.keys(record);
-    // Create an array to store the values for each field
-    const values = keys.map(key => record[key]);
-    // Join the keys and values into a single CSV string and return it
-    return `${keys.join(',')}\n${values.join(',')}`;
+    const fields = Object.keys(record.toJSON());
+    const json = JSON.stringify(record);
+    const csv = json2csv(json, {fields});
+    return csv;
+}
+
+function getFields(studies){
+    const fields = [];
+    for(let i=0; i<studies.length; i++){
+        const keys = Object.keys(studies[i].toJSON());
+        for(let j=0; j<keys.length; j++){
+            if(!fields.includes(keys[j])){
+                fields.push(keys[j]);
+            }
+        }
+    }
+    return fields;
 }
 
 exports.searchToCSV = async (req, res, next) => {
-    const search = await Search.findById(req.body.searchId).exec();
+    const search = await Search.findById(req.body.searchId).populate("studies").exec();
+    const studies = search.studies;
+    const fields= getFields(studies)
+    const options = {fields}
+    const csv = json2csv(studies, options)
     const fileName = search.name + ".csv"
-
-    const csvString = toCSV(search);
-    fs.writeFilesync(fileName, csvString)
-    res.download(fileName);
-    fs.unlinkSync(fileName)
-    res.redirect('/search/saved');
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.write(csv)
+    res.end();
 }
-
-exports.searchToPDF = async (req, res, next) => {
-    const search = await Search.findById(req.body.searchId).exec();
-    const fileName = search.name + ".pdf";
-    const csvContents = toCSV(search);
-    let rows = csvContents.split('\n');
-
-    // Create a new PDF document
-    let doc = new jsPDF();
-    // Iterate through the rows and add them to the PDF
-    rows.forEach((row) => {
-        doc.text(row, 10, 10);
-    });
-
-    // Save the PDF
-    doc.save(fileName);
-
-    res.download(fileName);
-    fs.unlinkSync(fileName)
-    res.redirect('/search/saved')
-}
-
-
 

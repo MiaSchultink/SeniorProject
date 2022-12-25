@@ -142,8 +142,14 @@
     justify-content: left;
     align-items: center;
   }
-  .search-el{
+  .search-name{
     padding: 10px;
+  }
+  .search-name:hover{
+    color: var(--purple);
+  }
+  .search-date{
+    color: var(--light-grey);
   }
   .search-mod-btns{
     grid-area: btns;
@@ -153,12 +159,12 @@
   }
   .search-mod-btn{
     color: white;
-    height: 30px;
-    width: 30px;
-    border-radius: 20px;
-    font-size: 20px;
+    font-size: 15px;
     background-color: transparent;
     border:none;
+  }
+  .search-mod-btn:hover{
+    color: var(--purple);
   }
 
   .sel-cont{
@@ -167,4 +173,16 @@
   .unsel-cont{
     display: none;
   }
+  .sel-stat:hover{
+    color: var(--purple);
+    cursor:pointer;
+  }
+  .unsel-stat:hover{
+    color: var(--purple);
+    cursor: pointer;
+  }
+  .field-cont{
+    color: var(--light-grey);
+  }
+  
   

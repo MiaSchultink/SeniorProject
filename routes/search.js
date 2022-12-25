@@ -16,7 +16,5 @@ router.get('/saved/edit/:searchId', isAuth, searchController.getEditSearch);
 
 router.post('/saved/json', isAuth, searchController.searchToJson);
 router.post('/saved/csv',isAuth, searchController.searchToCSV);
-router.post('/saved/pdf', isAuth, searchController.searchToPDF);
-
 
 module.exports = router;

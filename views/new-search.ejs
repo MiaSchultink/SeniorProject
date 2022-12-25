@@ -9,28 +9,28 @@
                     container.style.display = "block";
                     const clickDiv = document.getElementById("sel-div");
                     clickDiv.innerHTML = "Hide Selected"
-                    clickDiv.onclick = hideSelected();
+                    clickDiv.onclick = () => hideSelected();
                 }
                 function hideSelected(){
                     const container = document.getElementById("sel-cont");
                     container.style.display = "none"
                     const clickDiv = document.getElementById("sel-div");
                     clickDiv.innerHTML = "Show Selected"
-                    clickDiv.onclick = showSelected();
+                    clickDiv.onclick = () => showSelected();
                 }
                 function showUnselected(){
-                    const container = document.getElementById("unsel-container");
+                    const container = document.getElementById("unsel-cont");
                     container.style.display = "block"
                     const clickDiv = document.getElementById("unsel-div");
                     clickDiv.innerHTML = "Hide Unselected";
-                    clickDiv.onclick = hideUnselected();
+                    clickDiv.onclick = () => hideUnselected();
                 }
                 function hideUnselected(){
-                    const container = document.getElementById("unsel-container");
+                    const container = document.getElementById("unsel-cont");
                     container.style.display = "none"
                     const clickDiv = document.getElementById("unsel-div");
                     clickDiv.innerHTML = "Show Unselected"
-                    clickDiv.onclick = showUnselected();
+                    clickDiv.onclick = () => showUnselected();
                 }
             </script>
             <form class="search-form" method="post" action="/search/new">
@@ -41,7 +41,7 @@
                 <div class="sel-stat" onclick="showSelected()" id="sel-div">Show Selected</div>
                 <div class="sel-cont" id="sel-cont">
                     <%for(let i=0; i<selected.length; i++){%>
-                        <div class="field-cont" id="sel-cont">
+                        <div class="field-cont" id="sel-field-cont">
                             <div calss="field-text"><%=selected[i]%></div>
                         </div>
                     <%}%>
@@ -49,7 +49,7 @@
                 <div class="unsel-stat" onclick="showUnselected()" id="unsel-div">Show Unselected</div>
                 <div class="unsel-cont" id="unsel-cont">
                     <%for(let i=0; i<unselected.length; i++){%>
-                        <div class="field-cont">
+                        <div class="field-cont" id="unsel-field-cont">
                             <input type="checkbox" name="<%=unselected[i]%>" value="<%=unselected[i]%>">
                             <label for="<%=unselected[i]%>"><%=unselected[i]%></label>     
                         </div>

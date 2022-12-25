@@ -1,73 +1,45 @@
 const mongoose = require('mongoose');
+const fs = require('fs')
 
 const Schema = mongoose.Schema;
-const studySchema= new Schema({
-    NCTId:{
-        type:String,
-        required: true,
-        unique:true
-    },
-    briefTitle:{
-        type:String
-    },
-    status:{
-        type:String
-    },
-    enrolment:{
-        type:Number
-    },
-    minAge:{
-        type:Number
-    },
-    maxAge:{
-        type:Number
-    },
-    condition:{
-        type:String
-    },
-    leadSponsor:{
-        type:String
-    },
-    type:{
-        type:String
-    },
-    phase:{
-        type:String
-    },
-    isFDAReg:{
-        type:Boolean
-    },
-    interventionType:{
-        type:String
-    },
-    startDate:{
-        type:String
-    },
-    duration:{
-        type:String
-    },
-    completionDate:{
-        type:String
-    },
-    primaryOutcomes:{
-        type:String,
-    },
-    pValue:{
-        type:Number
-    },
-    numSeriousEvents:{
-        type:Number
-    },
-    numAffectedBySeriousEvents:{
-        type:Number
-    },
-    precentGeneticTreatment:{
-        type:Number
-    },
-    url:{
-        type:String
-    }
+const studySchema = new Schema({
 
+    isFDAReg: {
+        type: Boolean
+    },
+    miliStartD:{
+        type: Number
+    },
+    miliCompD: {
+        type: Number
+    },
+    hasResults: {
+        type: Boolean,
+        default: false
+    },
+    url: {
+        type: String,
+    },
 })
 
-module.exports = mongoose.model('Study', studySchema);
+const jsonFileData = fs.readFileSync('StudyFields.json');
+const json = JSON.parse(jsonFileData)
+
+
+//array of field names
+const jsonFields  = json.StudyFields.Fields;
+const extras  ={}
+for (let i = 0; i < jsonFields.length; i++) {
+    const propKey = jsonFields[i]
+    let unique = false
+    if(propKey =='NCTId'){
+        unique = true
+    }
+    extras[propKey] = {
+        type: String,
+        unique: unique
+    }
+    studySchema.add(extras)
+}
+
+module.exports = mongoose.model('Study', studySchema)
