@@ -23,6 +23,9 @@ const searchSchema = new Schema({
     },
     stringDate:{
         type:String
+    },
+    userSelectedFields:{
+        type: [String]
     }
 
 })

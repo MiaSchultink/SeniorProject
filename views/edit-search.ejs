@@ -1,0 +1,14 @@
+<%- include('includes/top.ejs') %> 
+<body>
+    <%- include('includes/nav.ejs') %>
+    <div class="top">
+        <div class="main">
+          <form action="/search/saved/edit" method="post">
+            <input type="text" name="searchName" class="input-txt" value="<%=search.name%>">
+            <input type ="hidden" name ="_csrf" value= '<%=csrfToken%>'>
+            <input type="hidden" name="searchId" value="<%=search._id%>">
+            <button type="submit" class="btn">Save Changes</button>
+         </form>
+        </div>
+    </div>
+</body>

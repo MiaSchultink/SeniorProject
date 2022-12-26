@@ -12,7 +12,9 @@ router.get('/saved', isAuth,  searchController.getSavedSearches);
 router.get('/saved/:searchId', isAuth, searchController.getSingleSearch);
 
 router.post('/saved/delete/:searchId', isAuth, searchController.deleteSearch);
+
 router.get('/saved/edit/:searchId', isAuth, searchController.getEditSearch);
+router.post('/saved/edit', isAuth, searchController.editSearch)
 
 router.post('/saved/json', isAuth, searchController.searchToJson);
 router.post('/saved/csv',isAuth, searchController.searchToCSV);

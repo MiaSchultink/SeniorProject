@@ -20,6 +20,10 @@ const studySchema = new Schema({
     url: {
         type: String,
     },
+    timeStamp:{
+        type:Date,
+        unique: true
+    }
 })
 
 const jsonFileData = fs.readFileSync('StudyFields.json');
@@ -28,18 +32,14 @@ const json = JSON.parse(jsonFileData)
 
 //array of field names
 const jsonFields  = json.StudyFields.Fields;
-const extras  ={}
+const userSelectedFields = {}
+
 for (let i = 0; i < jsonFields.length; i++) {
     const propKey = jsonFields[i]
-    let unique = false
-    if(propKey =='NCTId'){
-        unique = true
+    userSelectedFields[propKey] = {
+        type: String
     }
-    extras[propKey] = {
-        type: String,
-        unique: unique
-    }
-    studySchema.add(extras)
+    studySchema.add(userSelectedFields)
 }
 
 module.exports = mongoose.model('Study', studySchema)

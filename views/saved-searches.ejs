@@ -5,9 +5,9 @@
     <div class="main">
         <div class="saved-searches-container">
             <% for (let i=0; i<user.saved.length; i++){ %>
-                <div class="saved-search-container" onclick="location.assign('/search/saved/<%=user.saved[i]._id%>')">
+                <div class="saved-search-container">
                 <div class="saved-search-info">
-                    <div class="search-name"><%=user.saved[i].name%></div>
+                    <div class="search-name" onclick="location.assign('/search/saved/<%=user.saved[i]._id%>')"><%=user.saved[i].name%></div>
                     <div class="search-date"><%=user.saved[i].stringDate%></div>
                 </div>
                     <div class="search-mod-btns">
@@ -21,7 +21,7 @@
                             <input type ="hidden" name ="_csrf" value= '<%=csrfToken%>'>
                             <input type="hidden" name="searchId" value="<%=user.saved[i]._id%>">
                         </form>
-                    <button class="search-mod-btn" onclick="location.assign('/saved/search/edit/<%=user.saved[i]._id%>')"><i class="fas fa-edit"></i></button>
+                    <button class="search-mod-btn" onclick="location.assign('/search/saved/edit/<%=user.saved[i]._id%>')"><i class="fas fa-edit"></i></button>
                     <form action="/search/saved/json" method="post">
                         <button class="search-mod-btn" type="submit">JSON</button>
                         <input type ="hidden" name ="_csrf" value= '<%=csrfToken%>'>

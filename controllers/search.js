@@ -2,8 +2,11 @@ const fetch = require('node-fetch')
 const Study = require('../models/study')
 const User = require('../models/user');
 const Search = require('../models/search')
+const Snapshot = require('../models/snapshot')
 
 const fs = require('fs');
+const { serialize } = require('v8');
+const { createSecureServer } = require('http2');
 const json2csv = require('json2csv').parse;
 
 
@@ -14,16 +17,16 @@ const createFields = ["NCTId", "InterventionType", "Condition"]
 const generalFields = ["NCTId", "OfficialTitle", "LeadSponsorName", "DetailedDescription", "EnrollmentCount", "IsFDARegulatedDevice", "IsFDARegulatedDrug", "BriefTitle", "StudyType", "Phase", "OverallStatus"];
 const timeFields = ["NCTId", "CompletionDate", "StartDate", "TargetDuration"];
 const participantFields = ["NCTId", "MaximumAge", "MinimumAge"];
-const resultFields = ["NCTId", "SecondaryOutcomeDescription", "PrimaryOutcomeDescription","ResultsFirstPostDate"]
+const resultFields = ["NCTId", "SecondaryOutcomeDescription", "PrimaryOutcomeDescription", "ResultsFirstPostDate"]
 const statsFields = ["NCTId", "OutcomeAnalysisPValue", "SeriousEventStatsNumEvents", "SeriousEventStatsNumAffected"];
 
-const excludeFields = ["NCTId", "MinumumAge", "MaximumAge", "IsFDARegulatedDevice", "IsFDARegulatedDrug","Keyword"];
+const excludeFields = ["NCTId", "MinumumAge", "MaximumAge", "IsFDARegulatedDevice", "IsFDARegulatedDrug", "Keyword"];
 
 function combineFields() {
 
     const allFields = [];
-    for(field of createFields){
-        if(!allFields.includes(field)){
+    for (field of createFields) {
+        if (!allFields.includes(field)) {
             allFields.push(field)
         }
     }
@@ -73,8 +76,8 @@ function groupBy20(allSelected) {
 
     for (let i = 0; i < allSelected.length; i += 19) {
         const group = ["NCTId"];
-        let j=i;
-        while(j<i+19 && j<allSelected.length){
+        let j = i;
+        while (j < i + 19 && j < allSelected.length) {
             group.push(allSelected[j])
             j++;
         }
@@ -157,7 +160,28 @@ function getJSONFieldsFromXMl() {
     return jsonFields
 }
 
-async function makeStudies(condition) {
+async function addStudyFields(condition, study, userSelectedFields) {
+
+    await addGeneralFields(condition, study);
+    console.log("general added")
+    await addTimeFields(condition, study);
+    console.log("time added")
+    await addStatsFields(condition, study);
+    console.log("stats added")
+    await addParticipantFields(condition, study);
+    console.log("part added")
+    await addResultsFields(condition, study);
+    console.log("results added")
+    await addAdditionalSelectedFields(condition, userSelectedFields, study)
+    console.log("extra added")
+
+    const currnetTime = new Date();
+    const timeStamp = currnetTime.getTime()
+    study.timeStamp = timeStamp
+    await study.save();
+}
+
+async function makeStudies(search) {
     try {
         const retStudies = [];
         const json = await fetchJSON(createFields, condition);
@@ -166,15 +190,15 @@ async function makeStudies(condition) {
         for (jsonStudy of jsonStudies) {
 
             if (jsonStudy.Condition[0] == condition && (jsonStudy.InterventionType[0] == "Genetic")) {
-                 let study = await Study.findOne({ NCTId: jsonStudy.NCTId[0] }).exec();
-                if (study == null) {
-                    study = new Study({
-                        NCTId: jsonStudy.NCTId[0],
-                        Condition: jsonStudy.Condition[0],
-                        InterventionType: jsonStudy.InterventionType[0]
-                    })
-                }
-                await study.save();
+
+                const study = new Study({
+                    NCTId: jsonStudy.NCTId[0],
+                    Condition: jsonStudy.Condition[0],
+                    InterventionType: jsonStudy.InterventionType[0]
+                })
+                console.log("study made")
+                await addStudyFields(search.condition, study, search.userSelectedFields)
+
                 retStudies.push(study)
             }
 
@@ -186,8 +210,33 @@ async function makeStudies(condition) {
     }
 }
 
-async function addGeneralFields(condition){
-    try{
+async function updateStudies(search) {
+    try {
+        const retStudies = [];
+        const json = await fetchJSON(createFields, search.condition);
+        const jsonStudies = json.StudyFieldsResponse.StudyFields;
+
+        for (jsonStudy of jsonStudies) {
+            for(searchResult of search.studies){
+                if(searchResult.NCTId == jsonStudy.NCTId[0]){
+                    const study = await Study.findById(searchResult._id).exec();
+                    const updatedStudy = await addStatsFields(search.condition, study, search.userSelectedFields);
+                    const currentTime = new Date();
+                    const timeStamp = currentTime.getTime();
+                    study.timeStamp = timeStamp;
+                    retStudies.push(updatedStudy);
+                }
+            }
+        }
+        return retStudies;
+    }
+    catch (err) {
+        console.log(err)
+    }
+}
+
+async function addGeneralFields(condition, dbStudy) {
+    try {
         const json = await fetchJSON(generalFields, condition);
         const jsonStudies = json.StudyFieldsResponse.StudyFields;
         for (jsonStudy of jsonStudies) {
@@ -195,19 +244,18 @@ async function addGeneralFields(condition){
             const isFDA = jsonStudy.IsFDARegulatedDevice[0] == "Yes" || jsonStudy.IsFDARegulatedDrug[0] == "Yes";
             const studyURL = 'https://clinicaltrials.gov/ct2/show/' + jsonStudy.NCTId[0];
 
-            const dbStudy = await Study.findOne({NCTId: jsonStudy.NCTId[0]}).exec();
-            if(dbStudy!=null){
-                for(let i=0; i<generalFields.length; i++){
-                    if(!excludeFields.includes(generalFields[i])){
+            if (dbStudy.NCTId == jsonStudy.NCTId[0]) {
+                for (let i = 0; i < generalFields.length; i++) {
+                    if (!excludeFields.includes(generalFields[i])) {
                         console.log(generalFields[i])
-                        if(jsonStudy[generalFields[i]][0]!=null){
+                        if (jsonStudy[generalFields[i]][0] != null) {
                             dbStudy[generalFields[i]] = jsonStudy[generalFields[i]][0];
                         }
-                        
+
                     }
                 }
                 dbStudy.isFDAReg = isFDA;
-                dbStudy.url= studyURL;
+                dbStudy.url = studyURL;
 
                 await dbStudy.save();
             }
@@ -218,21 +266,20 @@ async function addGeneralFields(condition){
     }
 }
 
-async function addTimeFields(condition) {
+async function addTimeFields(condition, dbStudy) {
     try {
         const json = await fetchJSON(timeFields, condition);
         const jsonStudies = json.StudyFieldsResponse.StudyFields;
 
         for (jsonStudy of jsonStudies) {
 
-            const dbStudy = await Study.findOne({ NCTId: jsonStudy.NCTId[0] }).exec();
-            if (dbStudy != null) {
+            if (dbStudy.NCTId == jsonStudy.NCTId[0]) {
                 console.log("Study Id", dbStudy.NCTId)
                 dbStudy.StartDate = jsonStudy.StartDate[0];
                 dbStudy.CompletionDate = jsonStudy.CompletionDate[0];
                 const miliStartDObjcet = new Date(dbStudy.StartDate);
                 const miliStartD = miliStartDObjcet.getTime();
-                const miliCompDObject  = new Date(dbStudy.CompletionDate);
+                const miliCompDObject = new Date(dbStudy.CompletionDate);
                 const miliCompD = miliCompDObject.getTime();
                 dbStudy.miliStartD = miliStartD;
                 dbStudy.miliCompD = miliCompD;
@@ -245,15 +292,14 @@ async function addTimeFields(condition) {
         console.log(err)
     }
 }
-async function addStatsFields(condition) {
+async function addStatsFields(condition, dbStudy) {
     try {
         const json = await fetchJSON(statsFields, condition);
         const jsonStudies = json.StudyFieldsResponse.StudyFields;
 
         for (jsonStudy of jsonStudies) {
 
-            const dbStudy = await Study.findOne({ NCTId: jsonStudy.NCTId[0] }).exec();
-            if (dbStudy != null) {
+            if (dbStudy.NCTId == jsonStudy.NCTId[0]) {
                 console.log("Study Id", dbStudy.NCTId);
                 console.log('p value', jsonStudy.OutcomeAnalysisPValue[0])
                 if (jsonStudy.OutcomeAnalysisPValue[0] != null) {
@@ -290,14 +336,13 @@ function checkAndConvertAge(stringAge) {
     return numAge;
 }
 
-async function addParticipantFields(condition) {
+async function addParticipantFields(condition, dbStudy) {
     try {
         const json = await fetchJSON(participantFields, condition);
         const jsonStudies = json.StudyFieldsResponse.StudyFields;
 
         for (jsonStudy of jsonStudies) {
-            const dbStudy = await Study.findOne({ NCTId: jsonStudy.NCTId[0] }).exec();
-            if (dbStudy != null) {
+            if (dbStudy.NCTId == jsonStudy.NCTId[0]) {
                 console.log("Study Id", dbStudy.NCTId)
 
                 if (jsonStudy.MinimumAge[0] != null && !isNaN(parseInt(jsonStudy.MinimumAge[0]))) {
@@ -317,27 +362,22 @@ async function addParticipantFields(condition) {
         console.log(err)
     }
 }
-async function addResultsFields(condition) {
+async function addResultsFields(condition, dbStudy) {
     try {
         const json = await fetchJSON(resultFields, condition);
         const jsonStudies = json.StudyFieldsResponse.StudyFields;
 
         for (jsonStudy of jsonStudies) {
-            if (jsonStudy != null) {
 
-                const dbStudy = await Study.findOne({ NCTId: jsonStudy.NCTId[0] }).exec();
-
-                if (dbStudy != null) {
-                    console.log("Study Id", dbStudy.NCTId)
-                    if (jsonStudy.PrimaryOutcomeDescription[0] != null) {
-                        dbStudy.PrimaryOutcomeDescription = jsonStudy.PrimaryOutcomeDescription[0];
-                    }
-                    if(jsonStudy.ResultsFirstPostDate.length>0){
-                        dbStudy.hasResults = true;
-                    }
-                    await dbStudy.save();
+            if (dbStudy.NCTId == jsonStudy.NCTId[0]) {
+                console.log("Study Id", dbStudy.NCTId)
+                if (jsonStudy.PrimaryOutcomeDescription[0] != null) {
+                    dbStudy.PrimaryOutcomeDescription = jsonStudy.PrimaryOutcomeDescription[0];
                 }
-
+                if (jsonStudy.ResultsFirstPostDate.length > 0) {
+                    dbStudy.hasResults = true;
+                }
+                await dbStudy.save();
             }
         }
     }
@@ -346,18 +386,17 @@ async function addResultsFields(condition) {
     }
 }
 
-async function addAdditionalSelectedFields(condition, additionalFields){
-    try{
+async function addAdditionalSelectedFields(condition, additionalFields, dbStudy) {
+    try {
         const groupedFields = groupBy20(additionalFields);
 
-        for(let i=0; i<groupedFields.length; i++){
+        for (let i = 0; i < groupedFields.length; i++) {
             const currentFields = groupedFields[i];
             const json = await fetchJSON(currentFields, condition);
             const jsonStudies = json.StudyFieldsResponse.StudyFields;
-            for(jsonStudy of jsonStudies){
-                const dbStudy = await Study.findOne({NCTId: jsonStudy.NCTId[0]}).exec();
-                if(dbStudy!=null){
-                    for(let j=0; j<currentFields.length; j++){
+            for (jsonStudy of jsonStudies) {
+                if (dbStudy.NCTId == jsonStudy.NCTId[0]) {
+                    for (let j = 0; j < currentFields.length; j++) {
                         console.log(jsonStudy[currentFields[j]][0]);
                         console.log(currentFields[j])
                         dbStudy[currentFields[j]] = jsonStudy[currentFields[j]][0];
@@ -365,8 +404,22 @@ async function addAdditionalSelectedFields(condition, additionalFields){
                     await dbStudy.save();
                 }
             }
-           
+
         }
+    }
+    catch (err) {
+        console.log(err)
+    }
+}
+exports.getNewSearch = (req, res, next) => {
+    try {
+        const unselected = generateUnselectedFields();
+        const selected = combineFields();
+
+        res.render('new-search', {
+            unselected: unselected,
+            selected: selected
+        });
     }
     catch (err) {
         console.log(err)
@@ -388,29 +441,17 @@ exports.startNewSearch = async (req, res, next) => {
             stringDate: stringDate
         })
 
-        const studies = await makeStudies(condition);
-        console.log("Studies made")
-        newSearch.studies = studies;
-        await addGeneralFields(condition);
-        console.log("general fields added")
-        await addTimeFields(condition);
-        console.log("time fields added")
-        await addStatsFields(condition);
-        console.log("stats fields added")
-        await addParticipantFields(condition);
-        console.log("participant fields added")
-        await addResultsFields(condition);
-        console.log("result fields added")
-        const additionalFields =[];
+        const additionalFields = [];
         const keys = Object.keys(req.body);
-        for(let k=0; k<keys.length; k++){
-            if(keys[k]!="name"&&keys[k]!="condition"&&keys[k]!="_csrf"){
+        for (let k = 0; k < keys.length; k++) {
+            if (keys[k] != "name" && keys[k] != "condition" && keys[k] != "_csrf") {
                 additionalFields.push(keys[k]);
             }
         }
-        await addAdditionalSelectedFields(condition, additionalFields);
-        console.log("addional fields added")
+        newSearch.userSelectedFields = additionalFields;
 
+        const studies = await makeStudies(newSearch);
+        newSearch.studies = studies;
         await newSearch.save();
         user.saved.push(newSearch);
         await user.save();
@@ -423,40 +464,25 @@ exports.startNewSearch = async (req, res, next) => {
 
 }
 
-exports.getNewSearch = (req, res, next) => {
-    try {
-        const unselected = generateUnselectedFields();
-        const selected = combineFields();
-    
-        res.render('new-search', {
-            unselected: unselected,
-            selected: selected
-        });
-    }
-    catch (err) {
-        console.log(err)
-    }
-}
-
-exports.deleteSearch = async (req, res, next) => {
-    try {
-        const user = await User.findById(req.session.user._id).exec();
-        const search = await Search.findById(req.body.searchId).exec();
-
-        user.saved.pull(search);
-        await search.remove();
-
-        await user.save();
-        res.redirect('/search/saved')
-    }
-    catch (err) {
-        console.log(err)
-    }
-
-}
-
 exports.getEditSearch = async (req, res, next) => {
     try {
+        const search = await Search.findById(req.params.searchId).exec();
+        res.render('edit-search',{
+            search:search
+        })
+    }
+    catch (err) {
+        console.log(err)
+    }
+}
+
+exports.editSearch = async(req, res, next) =>{
+    try{
+        const search = await Search.findById(req.body.searchId).exec();
+        const newName = req.body.searchName;
+        search.name = newName;
+        await search.save();
+        res.redirect('/search/saved')
     }
     catch (err) {
         console.log(err)
@@ -506,37 +532,37 @@ exports.filterStudies = async (req, res, next) => {
 }
 
 exports.searchToJson = async (req, res, next) => {
-    try{
-    const search = await Search.findById(req.body.searchId).populate("studies").exec();
-    const stringSearch = JSON.stringify(search);
-    console.log(stringSearch)
-    const fileName = search.name + ".json";
+    try {
+        const search = await Search.findById(req.body.searchId).populate("studies").exec();
+        const stringSearch = JSON.stringify(search);
+        console.log(stringSearch)
+        const fileName = search.name + ".json";
 
-    res.setHeader('Content-disposition', `attachment; filename= "${fileName}"`);
-    res.setHeader('Content-type', 'application/json');
-    res.write(stringSearch);
-    res.end();
+        res.setHeader('Content-disposition', `attachment; filename= "${fileName}"`);
+        res.setHeader('Content-type', 'application/json');
+        res.write(stringSearch);
+        res.end();
     }
     catch (err) {
         console.log(err)
     }
-    
+
 }
 
 function jsToCSV(record) {
     // Get the keys of the record (i.e. the field names)
     const fields = Object.keys(record.toJSON());
     const json = JSON.stringify(record);
-    const csv = json2csv(json, {fields});
+    const csv = json2csv(json, { fields });
     return csv;
 }
 
-function getFields(studies){
+function getFields(studies) {
     const fields = [];
-    for(let i=0; i<studies.length; i++){
+    for (let i = 0; i < studies.length; i++) {
         const keys = Object.keys(studies[i].toJSON());
-        for(let j=0; j<keys.length; j++){
-            if(!fields.includes(keys[j])){
+        for (let j = 0; j < keys.length; j++) {
+            if (!fields.includes(keys[j])) {
                 fields.push(keys[j]);
             }
         }
@@ -547,13 +573,42 @@ function getFields(studies){
 exports.searchToCSV = async (req, res, next) => {
     const search = await Search.findById(req.body.searchId).populate("studies").exec();
     const studies = search.studies;
-    const fields= getFields(studies)
-    const options = {fields}
+    const fields = getFields(studies)
+    const options = { fields }
     const csv = json2csv(studies, options)
     const fileName = search.name + ".csv"
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.write(csv)
     res.end();
+}
+
+exports.updateSearch = async(req, res, next) =>{
+    const search = await Search.findById(req.body.searchId).populate("studies").exec();
+    const updatedStudies = await updateStudies(search);
+    search.studies = updatedStudies;
+    const currentTime = new Date();
+    const timeStamp = currentTime.getTime();
+    search.timeStamp = timeStamp;
+    await search.save();
+    res.redirect('/search/saved')
+}
+
+
+exports.deleteSearch = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.session.user._id).exec();
+        const search = await Search.findById(req.body.searchId).exec();
+
+        user.saved.pull(search);
+        await search.remove();
+
+        await user.save();
+        res.redirect('/search/saved')
+    }
+    catch (err) {
+        console.log(err)
+    }
+
 }
 
