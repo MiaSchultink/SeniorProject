@@ -1,12 +1,9 @@
 const fetch = require('node-fetch')
 const Study = require('../models/study')
 const User = require('../models/user');
-const Search = require('../models/search')
-const Snapshot = require('../models/snapshot')
+const Search = require('../models/search');
 
 const fs = require('fs');
-const { serialize } = require('v8');
-const { createSecureServer } = require('http2');
 const json2csv = require('json2csv').parse;
 
 
@@ -16,6 +13,7 @@ const NUM_STUDIES_GENERATED = 100;
 const createFields = ["NCTId", "InterventionType", "Condition"]
 const generalFields = ["NCTId", "OfficialTitle", "LeadSponsorName", "DetailedDescription", "EnrollmentCount", "IsFDARegulatedDevice", "IsFDARegulatedDrug", "BriefTitle", "StudyType", "Phase", "OverallStatus"];
 const timeFields = ["NCTId", "CompletionDate", "StartDate", "TargetDuration"];
+const locationFields = ["NCTId", "LocationCity", "LocationCountry", "LocationFascility"];
 const participantFields = ["NCTId", "MaximumAge", "MinimumAge"];
 const resultFields = ["NCTId", "SecondaryOutcomeDescription", "PrimaryOutcomeDescription", "ResultsFirstPostDate"]
 const statsFields = ["NCTId", "OutcomeAnalysisPValue", "SeriousEventStatsNumEvents", "SeriousEventStatsNumAffected"];
@@ -37,6 +35,11 @@ function combineFields() {
     }
     for (field of timeFields) {
         if (!allFields.includes(field)) {
+            allFields.push(field)
+        }
+    }
+    for (field of locationFields){
+        if(!allFields.includes(field)){
             allFields.push(field)
         }
     }
@@ -166,6 +169,8 @@ async function addStudyFields(condition, study, userSelectedFields) {
     console.log("general added")
     await addTimeFields(condition, study);
     console.log("time added")
+    await addLocationFields(condition, study)
+    console.log("locations added")
     await addStatsFields(condition, study);
     console.log("stats added")
     await addParticipantFields(condition, study);
@@ -176,7 +181,7 @@ async function addStudyFields(condition, study, userSelectedFields) {
     console.log("extra added")
 
     const currnetTime = new Date();
-    const timeStamp = currnetTime.getTime()
+    const timeStamp = currnetTime.getTime();
     study.timeStamp = timeStamp
     await study.save();
 }
@@ -184,12 +189,12 @@ async function addStudyFields(condition, study, userSelectedFields) {
 async function makeStudies(search) {
     try {
         const retStudies = [];
-        const json = await fetchJSON(createFields, condition);
+        const json = await fetchJSON(createFields, search.condition);
         const jsonStudies = json.StudyFieldsResponse.StudyFields;
 
         for (jsonStudy of jsonStudies) {
 
-            if (jsonStudy.Condition[0] == condition && (jsonStudy.InterventionType[0] == "Genetic")) {
+            if (jsonStudy.Condition[0] == search.condition && (jsonStudy.InterventionType[0] == "Genetic")) {
 
                 const study = new Study({
                     NCTId: jsonStudy.NCTId[0],
@@ -198,6 +203,7 @@ async function makeStudies(search) {
                 })
                 console.log("study made")
                 await addStudyFields(search.condition, study, search.userSelectedFields)
+                await study.save();
 
                 retStudies.push(study)
             }
@@ -212,7 +218,6 @@ async function makeStudies(search) {
 
 async function updateStudies(search) {
     try {
-        const retStudies = [];
         const json = await fetchJSON(createFields, search.condition);
         const jsonStudies = json.StudyFieldsResponse.StudyFields;
 
@@ -220,15 +225,14 @@ async function updateStudies(search) {
             for(searchResult of search.studies){
                 if(searchResult.NCTId == jsonStudy.NCTId[0]){
                     const study = await Study.findById(searchResult._id).exec();
-                    const updatedStudy = await addStatsFields(search.condition, study, search.userSelectedFields);
+                    await addStudyFields(search.condition, study, search.userSelectedFields);
                     const currentTime = new Date();
                     const timeStamp = currentTime.getTime();
                     study.timeStamp = timeStamp;
-                    retStudies.push(updatedStudy);
+                    await study.save();
                 }
             }
         }
-        return retStudies;
     }
     catch (err) {
         console.log(err)
@@ -292,6 +296,32 @@ async function addTimeFields(condition, dbStudy) {
         console.log(err)
     }
 }
+async function addLocationFields(condition, dbStudy){
+    try{
+        const json = await fetchJSON(statsFields, condition);
+        const jsonStudies = json.StudyFieldsResponse.StudyFields;
+
+        for(jsonStudy of jsonStudies){
+            if(dbStudy.NCTId == jsonStudy.NCTId[0]){
+                
+                if(jsonStudy.LocationCountry[0] !=null){
+                    dbStudy.LocationCountry = jsonStudy.LocationCountry[0];
+                }
+                if(jsonStudy.LocationCity[0] != null){
+                    dbStudy.LocationCity = jsonStudy.LocationCity[0];
+                }
+                if(jsonStudy.LocationFascility[0] != null){
+                    dbStudy.LocationFascility = jsonStudy.LocationFascility[0];
+                }
+                await dbStudy.save();
+            }
+        }
+    }
+    catch (err) {
+        console.log(err)
+    }
+}
+
 async function addStatsFields(condition, dbStudy) {
     try {
         const json = await fetchJSON(statsFields, condition);
@@ -300,16 +330,12 @@ async function addStatsFields(condition, dbStudy) {
         for (jsonStudy of jsonStudies) {
 
             if (dbStudy.NCTId == jsonStudy.NCTId[0]) {
-                console.log("Study Id", dbStudy.NCTId);
-                console.log('p value', jsonStudy.OutcomeAnalysisPValue[0])
                 if (jsonStudy.OutcomeAnalysisPValue[0] != null) {
                     dbStudy.PValue = parseInt(sonStudy.OutcomeAnalysisPValue[0]);
                 }
-                console.log("serious events", jsonStudy.SeriousEventStatsNumEvents[0])
                 if (jsonStudy.SeriousEventStatsNumEvents[0] != null) {
                     dbStudy.NumSeriousEvents = parseInt(jsonStudy.SeriousEventStatsNumEvents[0]);
                 }
-                console.log("num affected", jsonStudy.SeriousEventStatsNumAffected[0])
                 if (jsonStudy.SeriousEventStatsNumAffected[0] != null) {
                     dbStudy.NumAffectedBySeriousEvents = parseInt(jsonStudy.SeriousEventStatsNumAffected[0]);
                 }
@@ -585,8 +611,8 @@ exports.searchToCSV = async (req, res, next) => {
 
 exports.updateSearch = async(req, res, next) =>{
     const search = await Search.findById(req.body.searchId).populate("studies").exec();
-    const updatedStudies = await updateStudies(search);
-    search.studies = updatedStudies;
+    console.log(search)
+    await updateStudies(search);
     const currentTime = new Date();
     const timeStamp = currentTime.getTime();
     search.timeStamp = timeStamp;
@@ -598,9 +624,13 @@ exports.updateSearch = async(req, res, next) =>{
 exports.deleteSearch = async (req, res, next) => {
     try {
         const user = await User.findById(req.session.user._id).exec();
-        const search = await Search.findById(req.body.searchId).exec();
+        const search = await Search.findById(req.body.searchId).populate("studies").exec();
 
         user.saved.pull(search);
+        const studies = search.studies;
+        for(let i=0; i<studies.length; i++){
+            await studies[i].remove()
+        }
         await search.remove();
 
         await user.save();

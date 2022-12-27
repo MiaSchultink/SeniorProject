@@ -1,0 +1,27 @@
+<%- include('includes/top.ejs') %>
+<body>
+    <%- include('includes/nav.ejs') %>
+    <div class="top">
+    <div class="main">
+        <div class="users-cont">
+        <%for(let i=0; i<users.length; i++){%>
+            <div class="usr-cont">
+                <div class="usr-cred"><%=users[i].name%></div>
+                <div class="usr-cred"><%=users[i].email%></div>
+                <div class="usr-cred"><%=users[i].role%></div>
+                <form action="/admin/user/edit" method="post">
+                    <button type="submit" class="search-mod-btn"><i class="fas fa-edit"></i></button>
+                    <input type ="hidden" name ="_csrf" value= '<%=csrfToken%>'>
+                </form>
+                <form action="/admin/user/delete" method="post">
+                    <button type="submit" class="search-mod-btn"><i class="fas fa-trash"></i></button>
+                    <input type ="hidden" name ="_csrf" value= '<%=csrfToken%>'>
+                </form>
+
+            </div>
+        <%}%>
+    </div>
+    </div>
+</div>
+</div>
+</body>

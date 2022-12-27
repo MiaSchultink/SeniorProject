@@ -8,6 +8,8 @@ const session = require('express-session');
 const MongoDBStore = require('connect-mongodb-session')(session);
 const csrf = require('csurf');
 
+const favicon = require('serve-favicon');
+
 
 const app = express();
 const store = new MongoDBStore({
@@ -30,6 +32,7 @@ const User = require('./models/user');
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(favicon(__dirname + '/public/images/favicon.ico'));
 
 app.use(session({
     secret: process.env.SESSION_SECRET,

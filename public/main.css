@@ -19,10 +19,11 @@
 
   .top{
     padding: 20px;
+    height: 100vh;
 
   }
   .main{
-
+    height: 100%;
   }
   .nav-container{
     width: 100vw;
@@ -185,4 +186,34 @@
     color: var(--light-grey);
   }
   
-  
+  .usr-cont{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .usr-cred{
+    padding: 10px;
+  }
+
+  .search-cont{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .search-cred{
+    padding: 10px;
+  }
+  .study-cont{
+    display: flex;
+    justify-content: left;
+    align-items: center;
+  }
+  .s-id{
+    padding: 10px;
+  }
+  .searches-cont{
+    display: block;
+  }
+  .users-cont{
+    display: block;
+  }

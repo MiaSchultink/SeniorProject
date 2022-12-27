@@ -1,0 +1,26 @@
+<%- include('includes/top.ejs') %>
+<body>
+    <%- include('includes/nav.ejs') %>
+    <div class="top">
+    <div class="main">
+        <div class="searches-cont">
+        <%for(let i=0; i<searches.length; i++){%>
+            <div class="search-cont">
+               <div class="search-cred"><%=searches[i].name%></div>
+               <div class="search-cred"><%=searches[i].date%></div>
+               <% if(searches[i].studies.length>0) {%>
+               <%for(let j=0; j<searches[i].studies.length; j++){%>
+                    <div class="study-cont">
+                        <div class="s-id"><%=searches[i].studies[j].NCTId%></div>
+                        <div class="s-id"><%=searches[i].studies[j]._id%></div>
+                    </div>
+               <%}%>
+            </div>
+        <%}%>
+        <%}%>
+    </div>
+    </div>
+</div>
+   
+</div>
+</body>

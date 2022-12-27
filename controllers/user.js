@@ -244,3 +244,14 @@ exports.editProfile = async(req, res, next) =>{
 }
 
 
+exports.shareSearch = async(req, res, next) =>{
+    try{
+
+    }
+    catch (err) {
+        console.log(err)
+        res.render('error')
+    }
+    
+}
+
