@@ -229,7 +229,7 @@ exports.editProfile = async(req, res, next) =>{
     try{
         const user = await User.findById(req.session.user._id).exec();
         const name = req.body.name;
-        const email = req.body.eamil;
+        const email = req.body.email;
 
         user.name = name;
         user.email = email;

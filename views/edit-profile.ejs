@@ -1,0 +1,16 @@
+<%- include('includes/top.ejs') %> 
+<body>
+    <%- include('includes/nav.ejs') %>
+    <div class="top">
+        <div class="main">
+            <form action="/user/profile/edit" method="post">
+                <label for="name">Name:</label>
+                <input name="name" type="text" class="input-txt" value="<%=user.name%>">
+                <label for="email">Email:</label>
+                <input name="email" type="text" class="input-txt" value="<%=user.email%>">
+                <button type="submit" class="btn">Save Changes</button>
+                <input type ="hidden" name ="_csrf" value= '<%=csrfToken%>'>
+            </form>
+        </div>
+    </div>
+</body>

@@ -1,0 +1,15 @@
+<%- include('includes/top.ejs') %>
+<body>
+    <%- include('includes/nav.ejs') %>
+    <div class="top">
+    <div class="main">
+        <div class="profile-cont">
+            <div class="profile-cred"><%=user.name%></div>
+            <div class="profile-cred"><%=user.email%></div>
+            <button class="btn" onclick="location.assign('/user/profile/edit')">Edit Profile</button>
+        </div>
+    </div>
+    </div>
+   
+</div>
+</body>

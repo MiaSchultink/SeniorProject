@@ -20,10 +20,12 @@
   .top{
     padding: 20px;
     height: 100vh;
+    width: 100vw;
 
   }
   .main{
-    height: 100%;
+   width: 100%;
+   height: 100%;
   }
   .nav-container{
     width: 100vw;
@@ -48,7 +50,6 @@
 
     height: 100%;
     width: 100%;
-    background-color: var(--dark-purple);
   }
   .nav-btn:hover{
     background-color: var(--very-dark-purple);
@@ -80,6 +81,7 @@
         outline: none;
         -webkit-appearance: none;
         height: 30px;
+      margin-bottom: 10px;
   }
 
   .forgot-btn{
@@ -216,4 +218,44 @@
   }
   .users-cont{
     display: block;
+  }
+
+  .main-title{
+    font-size: 35px;
+    font-weight: bold;
+  }
+  .about{
+    display: none;
+    overflow: auto;
+  }
+  .about-visible{
+    padding: 10px;
+    border-radius: 10px;
+    background-color: var(--very-dark-grey);
+  }
+
+  .home-maincont{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+  }
+  .home-subcont{
+    display: block;
+    width: 70%;
+    max-width: 70%;
+  }
+
+  .profile-cred{
+    height: 30px;
+    width: 300px;
+    background-color: var(--dark-grey);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .profile-cont{
+    
   }
