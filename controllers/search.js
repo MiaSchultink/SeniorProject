@@ -8,17 +8,17 @@ const json2csv = require('json2csv').parse;
 
 
 
-const NUM_STUDIES_GENERATED = 100;
+const NUM_STUDIES_GENERATED = 1000;
 
 const createFields = ["NCTId", "InterventionType", "Condition"]
-const generalFields = ["NCTId", "OfficialTitle", "LeadSponsorName", "DetailedDescription", "EnrollmentCount", "IsFDARegulatedDevice", "IsFDARegulatedDrug", "BriefTitle", "StudyType", "Phase", "OverallStatus"];
+const generalFields = ["NCTId", "OfficialTitle","LeadSponsorName", "DetailedDescription", "EnrollmentCount", "DesignPrimaryPurpose", "IsFDARegulatedDevice", "IsFDARegulatedDrug", "BriefTitle", "StudyType", "Phase", "OverallStatus"];
 const timeFields = ["NCTId", "CompletionDate", "StartDate", "TargetDuration"];
 const locationFields = ["NCTId", "LocationCity", "LocationCountry", "LocationFascility"];
 const participantFields = ["NCTId", "MaximumAge", "MinimumAge"];
 const resultFields = ["NCTId", "SecondaryOutcomeDescription", "PrimaryOutcomeDescription", "ResultsFirstPostDate"]
 const statsFields = ["NCTId", "OutcomeAnalysisPValue", "SeriousEventStatsNumEvents", "SeriousEventStatsNumAffected"];
 
-const excludeFields = ["NCTId", "MinumumAge", "MaximumAge", "IsFDARegulatedDevice", "IsFDARegulatedDrug", "Keyword"];
+const excludeFields = ["NCTId", "MinumumAge", "MaximumAge", "IsFDARegulatedDevice", "IsFDARegulatedDrug", "Keyword",  "miliStartD", "miliCompD"];
 
 function combineFields() {
 
@@ -530,15 +530,150 @@ exports.getSavedSearches = async (req, res, next) => {
 
 }
 
-exports.getSingleSearch = async (req, res, next) => {
+/**
+ * 
+ * @param {*} search must be populated with studies
+ */
+function getStudyTypeList(search){
+    const studies = search.studies;
+    const types = [];
+    for(let i=0; i<studies.length; i++){
+        if(studies[i].StudyType!=null && !types.includes(studies[i].StudyType)){
+            types.push(studies[i].StudyType);
+        }
+    }
+    return types;
+}
+
+function getStudyStatusList(search){
+    const studies = search.studies;
+    const stats = [];
+    for(let i=0; i<studies.length; i++){
+        if(studies[i].OverallStatus!=null && !stats.includes(studies[i].OverallStatus)){
+            stats.push(studies[i].OverallStatus);
+        }
+    }
+    return stats;
+}
+
+function getStudyPhaseList(search){
+    const studies = search.studies;
+    const phases = [];
+    for(let i=0; i<studies.length; i++){
+        if(studies[i].Phase!=null && !phases.includes(studies[i].Phase)){
+            phases.push(studies[i].Phase);
+        }
+    }
+    return phases;
+}
+
+function getStudyLocationCity(search){
+    const studies = search.studies;
+    const cities = [];
+    for(let i=0; i<studies.length; i++){
+        if(studies[i].LocationCity!=null && !cities.includes(studies[i].LocationCity)){
+            cities.push(studies[i].LocationCity);
+        }
+    }
+    return cities;
+}
+
+function getLocationFascility(search){
+    const studies = search.studies;
+    const places = [];
+    for(let i=0; i<studies.length; i++){
+        if(studies[i].LocationFascility!=null && !places.includes(studies[i].LocationFascility)){
+            places.push(studies[i].LocationFascility);
+        }
+    }
+    return places;
+}
+
+exports.filterStudies = async (req, res, next) => {
     try {
-        const search = await Search.findById(req.params.searchId).populate("studies").exec();
+        const search = await Search.findById(req.body.searchId).populate('studies').exec();
+        const keys = Object.keys(req.body);
+        const filters =[];
+
+        for(let i=0; i<keys.length; i++){
+            if(keys[i]!="_csrf"&&keys[i]!="searchId"){
+                filters.push(keys[i]);
+            }
+        }
+
+        const types = getStudyTypeList(search);
+        const filteredTypes = [];
+        for(t of types){
+            if(filters.includes[t]){
+                filteredTypes.push(t);
+            }
+        }
+        const stats = getStudyStatusList(search);
+        const filteredStats = [];
+        for(s of stats){
+            if(filters.includes(s)){
+                filteredStats.push(s)
+            }
+        }
+        const phases = getStudyPhaseList(search);
+        const filteredPhases = [];
+        for(p of phases){
+            if(filters.includes(p)){
+                filteredPhases.push(p);
+            }
+        }
         const excludeFields = ["__v", "_id"];
 
-        console.log("search", search)
-        res.render('view-search', {
+
+        let filteredStudies = [];
+
+
+        console.log(filters)
+        console.log(req.body.hasResults)
+        if(req.body.hasResults=="yes"){
+            filteredStudies = [];
+            for(let i = 0; i<search.studies.length; i++){
+                console.log(search.studies[i].hasResults)
+                if(search.studies[i].hasResults){
+                    filteredStudies.push(search.studies[i]);
+                }
+            }
+        }
+        else if(req.body.hasResults=="no"){
+            filteredStudies = [];
+            for(let i=0; i<search.studies.length; i++){
+                console.log(search.studies[i].hasResults)
+                if(!search.studies[i].hasResults){
+                    filteredStudies.push(search.studies[i]);
+                }
+            }
+        }
+        console.log(filteredStudies)
+    
+        for(let j=0; j<filteredStudies.length; j++){
+            if(!filteredTypes.includes(filteredStudies[j].StudyType)){
+                filteredStudies.splice(j,1);
+            }
+        }
+        for(let j=0; j<filteredStudies.length; j++){
+            if(filteredStudies.length>0 && !filteredStats.includes(filteredStudies[j].OverallStatus)){
+                filteredStudies.splice(j,1);
+            }
+        }
+        for(let j=0; j<filteredStudies.length; j++){
+            if(filteredStudies.length>0 && !filteredPhases.includes(filteredStudies[j].Phase)){
+                filteredStudies.splice(j,1);
+            }
+        }
+           
+        console.log(filteredStudies)
+        res.render('view-search',{
             search: search,
-            excludeFields: excludeFields
+            studies: filteredStudies,
+            excludeFields: excludeFields,
+            types: types,
+            stats: stats,
+            phases: phases,
         })
     }
     catch (err) {
@@ -546,11 +681,22 @@ exports.getSingleSearch = async (req, res, next) => {
     }
 }
 
-exports.filterStudies = async (req, res, next) => {
+exports.getSingleSearch = async (req, res, next) => {
     try {
-        const search = await Search.findById(req.params.searchId).populate('studies').exec();
+        const search = await Search.findById(req.params.searchId).populate("studies").exec();
+        const types = getStudyTypeList(search);
+        const stats = getStudyStatusList(search);
+        const phases = getStudyPhaseList(search);
+        const excludeFields = ["__v", "_id"];
 
-
+        res.render('view-search', {
+            search: search,
+            studies: search.studies,
+            excludeFields: excludeFields,
+            types: types,
+            stats: stats,
+            phases: phases,
+        })
     }
     catch (err) {
         console.log(err)

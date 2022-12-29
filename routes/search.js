@@ -21,4 +21,6 @@ router.post('/saved/update', isAuth, searchController.updateSearch);
 router.post('/saved/json', isAuth, searchController.searchToJson);
 router.post('/saved/csv',isAuth, searchController.searchToCSV);
 
+router.post('/saved/filter', isAuth, searchController.filterStudies);
+
 module.exports = router;

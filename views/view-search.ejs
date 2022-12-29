@@ -7,20 +7,61 @@
             <div class="single-search-title"><%=search.name%></div>
             <div class="single-search-el"><%=search.date.toString()%></div>
             <div class="single-search-el"><%=search.condition%></div>
-            <div class="single-search-container">
-                <label for="single-search">Search</label>
-                <input type="search" class="input-txt" name="single-search">
-            </div>
-            <div class="single-studies">
-                <% for (let i=0; i<search.studies.length; i++) {%>
-                    <div class="single-study-container">
-                        <%for(let j=0; j<Object.keys(search.studies[i].toJSON()).length; j++){%>
-                        <% if(!excludeFields.includes((Object.keys(search.studies[i].toJSON()))[j])){%>
-                        <div class="single-field-content-container">
-                            <div class="single-field"><%=(Object.keys(search.studies[i].toJSON()))[j]%>:</div>
-                            <div></div>
-                            <div class="single-contnet"><%=search.studies[i][(Object.keys(search.studies[i].toJSON()))[j]]%></div>
+            <div class="study-filter-cont">
+                <form action="/search/saved/filter" method="post">
+                <div class="hasResults">
+                    <label for="hasResults">Has Results</label>
+                    <br>
+                    <select name="hasResults" id="hasResults">
+                        <option value="yes" selected>Has Results</option>
+                        <option value="no">No results</option>
+                    </select>
+                </div>
+                <br>
+                <div class="type-filter" name="type-filter">
+                    <label for="type-filter">Study type</label>
+                    <br>
+                    <% for(let i=0; i<types.length; i++){%>
+                        <div class="filter-field">
+                            <input type="checkbox" name="<%=types[i]%>" value="<%=types[i]%>">
+                            <label for="<%=types[i]%>"><%=types[i]%></label>
                         </div>
+                    <%}%>
+                </div>
+                <br>
+                <div class="stat-filter" name="stat-filter">
+                <label for="stat-filter">Status</label>
+                <br>
+                <% for(let j=0; j<stats.length; j++){%>
+                    <div class="filter-field">
+                        <input type="checkbox" name="<%=stats[j]%>" value="<%=stats[j]%>">
+                        <label for="<%=stats[j]%>"><%=stats[j]%></label>
+                    </div>
+                <%}%>
+                </div>
+                <br>
+                <div class="phase-filter" name="phase-filter">
+                <label for="phase-filter">Phase</label>
+                <br>
+                <% for(let j=0; j<phases.length; j++){%>
+                    <div class="filter-field">
+                        <input type="checkbox" name="<%=phases[j]%>" value="<%=phases[j]%>">
+                        <label for="<%=phases[j]%>"><%=phases[j]%></label>
+                    </div>
+                <%}%>
+            </div>
+            <button type = "submit" class="btn">Apply Filters</button>
+            <input type ="hidden" name ="_csrf" value= '<%=csrfToken%>'>
+            <input type="hidden" name="searchId" value="<%=search._id%>">
+            </form>
+        </div>
+            <div class="single-studies">
+                <% for (let i=0; i<studies.length; i++) {%>
+                    <div class="single-study-container">
+                        <%for(let j=0; j<Object.keys(studies[i].toJSON()).length; j++){%>
+                        <% if(!excludeFields.includes((Object.keys(studies[i].toJSON()))[j])){%>     
+                            <div class="single-field"><%=(Object.keys(studies[i].toJSON()))[j]%>:</div>
+                            <div class="single-contnet"><%=studies[i][(Object.keys(studies[i].toJSON()))[j]]%></div>
                           <%}%>
                         <%}%>
                     </div>
@@ -29,7 +70,5 @@
             
         </div>
     </div>
-    </div>
    
-</div>
 </body>
