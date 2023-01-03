@@ -13,12 +13,12 @@ const NUM_STUDIES_GENERATED = 1000;
 const createFields = ["NCTId", "InterventionType", "Condition"]
 const generalFields = ["NCTId", "OfficialTitle","LeadSponsorName", "DetailedDescription", "EnrollmentCount", "DesignPrimaryPurpose", "IsFDARegulatedDevice", "IsFDARegulatedDrug", "BriefTitle", "StudyType", "Phase", "OverallStatus"];
 const timeFields = ["NCTId", "CompletionDate", "StartDate", "TargetDuration"];
-const locationFields = ["NCTId", "LocationCity", "LocationCountry", "LocationFascility"];
+const locationFields = ["NCTId", "LocationCity", "LocationCountry", "LocationFacility"];
 const participantFields = ["NCTId", "MaximumAge", "MinimumAge"];
 const resultFields = ["NCTId", "SecondaryOutcomeDescription", "PrimaryOutcomeDescription", "ResultsFirstPostDate"]
 const statsFields = ["NCTId", "OutcomeAnalysisPValue", "SeriousEventStatsNumEvents", "SeriousEventStatsNumAffected"];
 
-const excludeFields = ["NCTId", "MinumumAge", "MaximumAge", "IsFDARegulatedDevice", "IsFDARegulatedDrug", "Keyword",  "miliStartD", "miliCompD"];
+const excludeFields = ["NCTId", "MinumumAge", "MaximumAge", "IsFDARegulatedDevice", "IsFDARegulatedDrug", "Keyword"];
 
 function combineFields() {
 
@@ -99,6 +99,19 @@ function getDayMonthYear(date) {
     return dateString;
 }
 
+function fixConditionString(condStr){
+    const trimmed = condStr.trim();
+    const lower = trimmed.toLowerCase();
+    const words = lower.split(" ");
+    let result = "";
+    for(let i=0; i<words.length; i++){
+        const word = words[i].charAt(0).toUpperCase() + words[i].slice(1);
+        result += word+" ";
+    }
+    result = result.trim();
+    return result;
+}
+
 function buildURL(fields, condition) {
 
     const splitCondition = condition.split(" ");
@@ -142,25 +155,6 @@ function getJSONFields() {
     const jsonFileData = fs.readFileSync('StudyFields.json');
     const json = JSON.parse(jsonFileData);
     return json
-}
-
-//get json fields using xml file
-function getJSONFieldsFromXMl() {
-    let jsonFields = {};
-    const xml = fs.readFileSync('StudyFields.xml');
-    let json = "";
-
-    xml2js.parseString(xml, { mergeAttrs: true }, (err, result) => {
-        if (err) {
-            throw err;
-        }
-        const jsonString = JSON.stringify(result, null, 4);
-        json = JSON.parse(jsonString);
-
-    });
-    jsonFields = json.StudyFields.FieldList[0].Field;
-
-    return jsonFields
 }
 
 async function addStudyFields(condition, study, userSelectedFields) {
@@ -281,12 +275,6 @@ async function addTimeFields(condition, dbStudy) {
                 console.log("Study Id", dbStudy.NCTId)
                 dbStudy.StartDate = jsonStudy.StartDate[0];
                 dbStudy.CompletionDate = jsonStudy.CompletionDate[0];
-                const miliStartDObjcet = new Date(dbStudy.StartDate);
-                const miliStartD = miliStartDObjcet.getTime();
-                const miliCompDObject = new Date(dbStudy.CompletionDate);
-                const miliCompD = miliCompDObject.getTime();
-                dbStudy.miliStartD = miliStartD;
-                dbStudy.miliCompD = miliCompD;
                 await dbStudy.save();
             }
 
@@ -298,7 +286,7 @@ async function addTimeFields(condition, dbStudy) {
 }
 async function addLocationFields(condition, dbStudy){
     try{
-        const json = await fetchJSON(statsFields, condition);
+        const json = await fetchJSON(locationFields, condition);
         const jsonStudies = json.StudyFieldsResponse.StudyFields;
 
         for(jsonStudy of jsonStudies){
@@ -310,8 +298,8 @@ async function addLocationFields(condition, dbStudy){
                 if(jsonStudy.LocationCity[0] != null){
                     dbStudy.LocationCity = jsonStudy.LocationCity[0];
                 }
-                if(jsonStudy.LocationFascility[0] != null){
-                    dbStudy.LocationFascility = jsonStudy.LocationFascility[0];
+                if(jsonStudy.LocationFacility[0] != null){
+                    dbStudy.LocationFacility = jsonStudy.LocationFacility[0];
                 }
                 await dbStudy.save();
             }
@@ -456,12 +444,13 @@ exports.startNewSearch = async (req, res, next) => {
     const user = await User.findById(req.session.user._id).exec();
     const searchName = req.body.name;
     const condition = req.body.condition;
+    const fixedCondition = fixConditionString(condition);
     const date = new Date();
     const stringDate = getDayMonthYear(date);
     console.log(req.body)
     try {
         const newSearch = new Search({
-            condition: condition,
+            condition: fixedCondition,
             name: searchName,
             date: date,
             stringDate: stringDate
@@ -519,6 +508,8 @@ exports.editSearch = async(req, res, next) =>{
 exports.getSavedSearches = async (req, res, next) => {
     try {
         const user = await User.findById(req.session.user._id).populate('saved').exec();
+        const fixecCondition = fixConditionString("cystic fibrosis")
+        console.log(fixecCondition)
         res.render("saved-searches", {
             user: user
         })
@@ -719,14 +710,6 @@ exports.searchToJson = async (req, res, next) => {
         console.log(err)
     }
 
-}
-
-function jsToCSV(record) {
-    // Get the keys of the record (i.e. the field names)
-    const fields = Object.keys(record.toJSON());
-    const json = JSON.stringify(record);
-    const csv = json2csv(json, { fields });
-    return csv;
 }
 
 function getFields(studies) {

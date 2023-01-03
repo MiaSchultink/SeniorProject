@@ -7,12 +7,6 @@ const studySchema = new Schema({
     isFDAReg: {
         type: Boolean
     },
-    miliStartD:{
-        type: Number
-    },
-    miliCompD: {
-        type: Number
-    },
     hasResults: {
         type: Boolean,
         default: false
