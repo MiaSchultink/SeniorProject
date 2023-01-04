@@ -31,7 +31,6 @@ catch (err) {
 };
 
 exports.postLogin = async (req, res, next) => {
-    console.log("hello")
     try {
         const email = req.body.email;
         const password = req.body.password;

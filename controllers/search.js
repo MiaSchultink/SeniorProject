@@ -4,6 +4,7 @@ const User = require('../models/user');
 const Search = require('../models/search');
 
 const fs = require('fs');
+const { type } = require('os');
 const json2csv = require('json2csv').parse;
 
 
@@ -530,6 +531,7 @@ function getStudyTypeList(search){
             types.push(studies[i].StudyType);
         }
     }
+    console.log(types)
     return types;
 }
 
@@ -592,10 +594,11 @@ exports.filterStudies = async (req, res, next) => {
         const types = getStudyTypeList(search);
         const filteredTypes = [];
         for(t of types){
-            if(filters.includes[t]){
+            if(filters.includes(t)){
                 filteredTypes.push(t);
             }
         }
+      
         const stats = getStudyStatusList(search);
         const filteredStats = [];
         for(s of stats){
@@ -615,13 +618,9 @@ exports.filterStudies = async (req, res, next) => {
 
         let filteredStudies = [];
 
-
-        console.log(filters)
-        console.log(req.body.hasResults)
         if(req.body.hasResults=="yes"){
             filteredStudies = [];
             for(let i = 0; i<search.studies.length; i++){
-                console.log(search.studies[i].hasResults)
                 if(search.studies[i].hasResults){
                     filteredStudies.push(search.studies[i]);
                 }
@@ -630,31 +629,33 @@ exports.filterStudies = async (req, res, next) => {
         else if(req.body.hasResults=="no"){
             filteredStudies = [];
             for(let i=0; i<search.studies.length; i++){
-                console.log(search.studies[i].hasResults)
                 if(!search.studies[i].hasResults){
                     filteredStudies.push(search.studies[i]);
                 }
             }
         }
+
         console.log(filteredStudies)
-    
         for(let j=0; j<filteredStudies.length; j++){
-            if(!filteredTypes.includes(filteredStudies[j].StudyType)){
-                filteredStudies.splice(j,1);
+            if(filteredStudies.length>0 && !filteredTypes.includes(filteredStudies[j].StudyType)){
+                console.log(filteredStudies[j].StudyType)
+                console.log("remove")
+                filetedStudies = filteredStudies.splice(j,1);
             }
         }
+        console.log(filteredStudies)
         for(let j=0; j<filteredStudies.length; j++){
             if(filteredStudies.length>0 && !filteredStats.includes(filteredStudies[j].OverallStatus)){
-                filteredStudies.splice(j,1);
+                filteredStudies = filteredStudies.splice(j,1);
             }
         }
         for(let j=0; j<filteredStudies.length; j++){
             if(filteredStudies.length>0 && !filteredPhases.includes(filteredStudies[j].Phase)){
-                filteredStudies.splice(j,1);
+               filteredStudies =  filteredStudies.splice(j,1);
             }
         }
            
-        console.log(filteredStudies)
+        const filtered = true
         res.render('view-search',{
             search: search,
             studies: filteredStudies,
@@ -662,6 +663,7 @@ exports.filterStudies = async (req, res, next) => {
             types: types,
             stats: stats,
             phases: phases,
+            filtered: filtered
         })
     }
     catch (err) {
@@ -676,6 +678,7 @@ exports.getSingleSearch = async (req, res, next) => {
         const stats = getStudyStatusList(search);
         const phases = getStudyPhaseList(search);
         const excludeFields = ["__v", "_id"];
+        const filtered = false;
 
         res.render('view-search', {
             search: search,
@@ -684,6 +687,7 @@ exports.getSingleSearch = async (req, res, next) => {
             types: types,
             stats: stats,
             phases: phases,
+            filtered: filtered
         })
     }
     catch (err) {
