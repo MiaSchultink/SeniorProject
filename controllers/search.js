@@ -447,7 +447,6 @@ exports.startNewSearch = async (req, res, next) => {
     const fixedCondition = fixConditionString(condition);
     const date = new Date();
     const stringDate = getDayMonthYear(date);
-    console.log(req.body)
     try {
         const newSearch = new Search({
             condition: fixedCondition,
@@ -508,8 +507,6 @@ exports.editSearch = async(req, res, next) =>{
 exports.getSavedSearches = async (req, res, next) => {
     try {
         const user = await User.findById(req.session.user._id).populate('saved').exec();
-        const fixecCondition = fixConditionString("cystic fibrosis")
-        console.log(fixecCondition)
         res.render("saved-searches", {
             user: user
         })

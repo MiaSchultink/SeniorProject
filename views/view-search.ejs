@@ -7,6 +7,7 @@
             <div class="single-search-title"><%=search.name%></div>
             <div class="single-search-el"><%=search.date.toString()%></div>
             <div class="single-search-el"><%=search.condition%></div>
+            <br>
             <div class="study-filter-cont">
                 <form action="/search/saved/filter" method="post">
                 <div class="hasResults">
@@ -50,11 +51,14 @@
                     </div>
                 <%}%>
             </div>
+            <br>
             <button type = "submit" class="btn">Apply Filters</button>
             <input type ="hidden" name ="_csrf" value= '<%=csrfToken%>'>
             <input type="hidden" name="searchId" value="<%=search._id%>">
             </form>
         </div>
+        <br>
+        <br>
             <div class="single-studies">
                 <% for (let i=0; i<studies.length; i++) {%>
                     <div class="single-study-container">
