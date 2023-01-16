@@ -19,7 +19,7 @@ const participantFields = ["NCTId", "MaximumAge", "MinimumAge"];
 const resultFields = ["NCTId", "SecondaryOutcomeDescription", "PrimaryOutcomeDescription", "ResultsFirstPostDate"]
 const statsFields = ["NCTId", "OutcomeAnalysisPValue", "SeriousEventStatsNumEvents", "SeriousEventStatsNumAffected"];
 
-const excludeFields = ["NCTId", "MinumumAge", "MaximumAge", "IsFDARegulatedDevice", "IsFDARegulatedDrug", "Keyword"];
+const excludeFields = ["NCTId", "MinimumAge", "MaximumAge", "IsFDARegulatedDevice", "IsFDARegulatedDrug", "Keyword"];
 
 function combineFields() {
 
@@ -638,8 +638,6 @@ exports.filterStudies = async (req, res, next) => {
         console.log(filteredStudies)
         for(let j=0; j<filteredStudies.length; j++){
             if(filteredStudies.length>0 && !filteredTypes.includes(filteredStudies[j].StudyType)){
-                console.log(filteredStudies[j].StudyType)
-                console.log("remove")
                 filetedStudies = filteredStudies.splice(j,1);
             }
         }
